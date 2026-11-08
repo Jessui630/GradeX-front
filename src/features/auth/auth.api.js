@@ -1,26 +1,17 @@
-import { env } from '../../config/env'
+import { apiFetch } from '../../lib/api'
 
-export async function registerUser(data) {
-  const response = await fetch(
-    `${env.apiUrl}/auth/register`,
-    {
-      method: 'POST',
+export function registrarCuenta(datos) {
+  return apiFetch('/cuentas', { method: 'POST', body: datos })
+}
 
-      headers: {
-        'Content-Type': 'application/json',
-      },
+export function iniciarSesion(datos) {
+  return apiFetch('/sesiones', { method: 'POST', body: datos, csrf: true })
+}
 
-      body: JSON.stringify(data),
-    },
-  )
+export function obtenerSesionActual() {
+  return apiFetch('/sesiones/actual')
+}
 
-  const result = await response.json()
-
-  if (!response.ok) {
-    throw new Error(
-      result.message ?? 'No fue posible crear la cuenta',
-    )
-  }
-
-  return result
+export function cerrarSesion() {
+  return apiFetch('/sesiones/actual', { method: 'DELETE', csrf: true })
 }

@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - develop
+      - feature/sprint1-solicitudes
   workflow_dispatch:
 
 jobs:
@@ -26,14 +27,35 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
       - name: Build GradeX frontend
+        env:
+          VITE_API_URL: /api
         run: npm run build
+
+      - name: Prepare Node 24 deployment package
+        run: |
+          mkdir -p deploy-root
+          cp -R dist deploy-root/dist
+          cp server.mjs deploy-root/server.mjs
+          cp deploy/package.json deploy-root/package.json
+          cd deploy-root
+          zip -r ../gradex-frontend.zip .
+          cd ..
+          sha256sum gradex-frontend.zip > gradex-frontend.sha256
 
       - name: Upload frontend artifact
         uses: actions/upload-artifact@v4
         with:
-          name: gradex-dist
-          path: ./dist
+          name: gradex-frontend
+          path: |
+            gradex-frontend.zip
+            gradex-frontend.sha256
 
   deploy:
     runs-on: ubuntu-latest
@@ -47,8 +69,11 @@ jobs:
       - name: Download frontend artifact
         uses: actions/download-artifact@v4
         with:
-          name: gradex-dist
+          name: gradex-frontend
           path: .
+
+      - name: Verify artifact checksum
+        run: sha256sum -c gradex-frontend.sha256
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -57,9 +82,31 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_AC7C915F314A49BCA9842FA13BA103FE }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_046EC26F405F4AC085DCA2472B99080F }}
 
-      - name: Deploy GradeX Frontend to Azure
+      - name: Verify App Service target (read-only)
+        run: |
+          az account show --query "{name:name,id:id,state:state}" -o json
+          APP=$(az webapp show -g gradex-rg -n gradex-front --query "{name:name,state:state,host:defaultHostName,kind:kind,plan:appServicePlanId,linuxFxVersion:siteConfig.linuxFxVersion}" -o json)
+          echo "$APP" | jq -e '.name == "gradex-front" and .state == "Running" and (.host | contains("gradex-front")) and (.kind | startswith("app,linux")) and (.linuxFxVersion | tostring | startswith("NODE|24"))' >/dev/null
+          PLAN=$(echo "$APP" | jq -r '.plan | split("/") | last')
+          az appservice plan show -g gradex-rg -n "$PLAN" --query "{name:name,sku:sku.name,tier:sku.tier,capacity:sku.capacity}" -o json
+          test "$(az appservice plan show -g gradex-rg -n "$PLAN" --query sku.name -o tsv)" = "F1"
+
+      - name: Configure Node 24 startup
+        run: |
+          az webapp config set \
+            --resource-group gradex-rg \
+            --name gradex-front \
+            --startup-file "node server.mjs"
+
+      - name: Deploy GradeX Frontend to existing App Service
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'gradex-front'
           slot-name: 'Production'
-          package: .
+          package: gradex-frontend.zip
+
+      - name: Deployment summary
+        run: |
+          echo "App: gradex-front"
+          echo "Plan: ASP-gradexrg-8bed (F1/Free)"
+          echo "Artifact SHA-256: $(awk '{print $1}' gradex-frontend.sha256)"
