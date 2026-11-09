@@ -127,15 +127,31 @@ jobs:
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_046EC26F405F4AC085DCA2472B99080F }}
 
       - name: Verify App Service target (read-only)
+        shell: bash
         run: |
+          set -euo pipefail
           az account show --query "{name:name,id:id,state:state}" -o json
-          APP=$(az webapp show -g gradex-rg -n gradex-front --query "{name:name,state:state,kind:kind,plan:appServicePlanId,linuxFxVersion:siteConfig.linuxFxVersion}" -o json)
-          echo "$APP" | jq -e '.name == "gradex-front" and .state == "Running" and (.kind | startswith("app,linux")) and (.kind | test("container") | not) and (.linuxFxVersion | tostring | startswith("NODE|24"))' >/dev/null
-          PLAN=$(echo "$APP" | jq -r '.plan | split("/") | last')
-          test "$PLAN" = "ASP-gradexrg-8bed"
-          az appservice plan show -g gradex-rg -n "$PLAN" --query "{name:name,sku:sku.name,tier:sku.tier,capacity:sku.capacity,reserved:reserved}" -o json
-          az appservice plan show -g gradex-rg -n "$PLAN" --query "{sku:sku.name,tier:sku.tier,capacity:sku.capacity,reserved:reserved}" -o json | \
-            jq -e '.sku == "F1" and .tier == "Free" and .capacity == 1 and .reserved == true' >/dev/null
+
+          APP_JSON=$(az webapp show --resource-group gradex-rg --name gradex-front --query "{id:id,name:name,state:state,kind:kind,linuxFxVersion:siteConfig.linuxFxVersion}" -o json)
+          test -n "$APP_JSON"
+          echo "$APP_JSON" | jq -e '.name == "gradex-front" and .state == "Running" and (.kind | startswith("app,linux")) and (.kind | test("container") | not) and (.linuxFxVersion | tostring | startswith("NODE|24"))' >/dev/null
+
+          APP_ID=$(echo "$APP_JSON" | jq -er '.id')
+          APP_RESOURCE=$(az resource show --ids "$APP_ID" -o json)
+          test -n "$APP_RESOURCE"
+          PLAN_ID=$(echo "$APP_RESOURCE" | jq -er '.properties.serverFarmId // empty')
+          test -n "$PLAN_ID"
+
+          EXPECTED_PLAN_ID=$(az resource show --resource-group gradex-rg --name ASP-gradexrg-8bed --resource-type Microsoft.Web/serverfarms --query id -o tsv)
+          test -n "$EXPECTED_PLAN_ID"
+          if [ "${PLAN_ID,,}" != "${EXPECTED_PLAN_ID,,}" ]; then
+            echo "El App Service no está asociado al plan ASP-gradexrg-8bed." >&2
+            exit 1
+          fi
+
+          PLAN_JSON=$(az appservice plan show --ids "$PLAN_ID" --query "{sku:sku.name,tier:sku.tier,capacity:sku.capacity,reserved:reserved}" -o json)
+          test -n "$PLAN_JSON"
+          echo "$PLAN_JSON" | jq -e '.sku == "F1" and .tier == "Free" and .capacity == 1 and .reserved == true' >/dev/null
 
       - name: Configure Node 24 startup
         run: |
