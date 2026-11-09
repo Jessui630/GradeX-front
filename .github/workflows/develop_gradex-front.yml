@@ -1,16 +1,26 @@
-name: Build and deploy GradeX Frontend to Azure
+name: GradeX Frontend CI and Production Deploy
 
 on:
   push:
     branches:
+      - main
       - develop
-      - feature/sprint1-solicitudes
+      - release
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+      - release
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
+    name: Build and verify
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
 
@@ -33,63 +43,99 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      - name: Runtime dependency audit
+        run: npm audit --omit=dev
+
       - name: Build GradeX frontend
         env:
           VITE_API_URL: /api
         run: npm run build
 
+      - name: Determine production artifact eligibility
+        id: production
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        run: echo "enabled=true" >> "$GITHUB_OUTPUT"
+
       - name: Prepare Node 24 deployment package
+        if: steps.production.outputs.enabled == 'true'
         run: |
           mkdir -p deploy-root
           cp -R dist deploy-root/dist
           cp server.mjs deploy-root/server.mjs
           cp deploy/package.json deploy-root/package.json
+          printf '{"commit":"%s","ref":"%s","runId":"%s","runAttempt":"%s"}\n' \
+            "$GITHUB_SHA" "$GITHUB_REF" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" \
+            > deploy-root/build-info.json
           cd deploy-root
           zip -r ../gradex-frontend.zip .
           cd ..
           sha256sum gradex-frontend.zip > gradex-frontend.sha256
 
-      - name: Upload frontend artifact
+      - name: Upload production artifact
+        if: steps.production.outputs.enabled == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: gradex-frontend
           path: |
             gradex-frontend.zip
             gradex-frontend.sha256
+          retention-days: 7
 
   deploy:
-    runs-on: ubuntu-latest
+    name: Deploy to production
     needs: build
-
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
     permissions:
-      id-token: write
       contents: read
+      id-token: write
+    concurrency:
+      group: gradex-frontend-production
+      cancel-in-progress: false
 
     steps:
-      - name: Download frontend artifact
+      - name: Download artifact from this workflow run
         uses: actions/download-artifact@v4
         with:
           name: gradex-frontend
           path: .
+          run-id: ${{ github.run_id }}
+          github-token: ${{ github.token }}
 
-      - name: Verify artifact checksum
-        run: sha256sum -c gradex-frontend.sha256
+      - name: Verify artifact integrity and commit
+        run: |
+          sha256sum -c gradex-frontend.sha256
+          unzip -p gradex-frontend.zip build-info.json | \
+            jq -e --arg sha "$GITHUB_SHA" '.commit == $sha and .ref == "refs/heads/main"' >/dev/null
 
-      - name: Login to Azure
+      - name: Validate OIDC configuration
+        env:
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZUREAPPSERVICE_TENANTID_AC7C915F314A49BCA9842FA13BA103FE }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_046EC26F405F4AC085DCA2472B99080F }}
+        run: |
+          test -n "$AZURE_CLIENT_ID"
+          test -n "$AZURE_TENANT_ID"
+          test -n "$AZURE_SUBSCRIPTION_ID"
+
+      - name: Login to Azure with OIDC
+        # Identidad esperada: oidc-msi-b6ba. El Client ID se toma de la variable AZURE_CLIENT_ID.
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_23CAB314178C412993E1247DFAACA9A6 }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_AC7C915F314A49BCA9842FA13BA103FE }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_046EC26F405F4AC085DCA2472B99080F }}
 
       - name: Verify App Service target (read-only)
         run: |
           az account show --query "{name:name,id:id,state:state}" -o json
-          APP=$(az webapp show -g gradex-rg -n gradex-front --query "{name:name,state:state,host:defaultHostName,kind:kind,plan:appServicePlanId,linuxFxVersion:siteConfig.linuxFxVersion}" -o json)
-          echo "$APP" | jq -e '.name == "gradex-front" and .state == "Running" and (.host | contains("gradex-front")) and (.kind | startswith("app,linux")) and (.linuxFxVersion | tostring | startswith("NODE|24"))' >/dev/null
+          APP=$(az webapp show -g gradex-rg -n gradex-front --query "{name:name,state:state,kind:kind,plan:appServicePlanId,linuxFxVersion:siteConfig.linuxFxVersion}" -o json)
+          echo "$APP" | jq -e '.name == "gradex-front" and .state == "Running" and (.kind | startswith("app,linux")) and (.kind | test("container") | not) and (.linuxFxVersion | tostring | startswith("NODE|24"))' >/dev/null
           PLAN=$(echo "$APP" | jq -r '.plan | split("/") | last')
-          az appservice plan show -g gradex-rg -n "$PLAN" --query "{name:name,sku:sku.name,tier:sku.tier,capacity:sku.capacity}" -o json
-          test "$(az appservice plan show -g gradex-rg -n "$PLAN" --query sku.name -o tsv)" = "F1"
+          test "$PLAN" = "ASP-gradexrg-8bed"
+          az appservice plan show -g gradex-rg -n "$PLAN" --query "{name:name,sku:sku.name,tier:sku.tier,capacity:sku.capacity,reserved:reserved}" -o json
+          az appservice plan show -g gradex-rg -n "$PLAN" --query "{sku:sku.name,tier:sku.tier,capacity:sku.capacity,reserved:reserved}" -o json | \
+            jq -e '.sku == "F1" and .tier == "Free" and .capacity == 1 and .reserved == true' >/dev/null
 
       - name: Configure Node 24 startup
         run: |
@@ -98,15 +144,16 @@ jobs:
             --name gradex-front \
             --startup-file "node server.mjs"
 
-      - name: Deploy GradeX Frontend to existing App Service
+      - name: Deploy only gradex-front
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'gradex-front'
-          slot-name: 'Production'
           package: gradex-frontend.zip
 
       - name: Deployment summary
         run: |
           echo "App: gradex-front"
+          echo "Resource group: gradex-rg"
           echo "Plan: ASP-gradexrg-8bed (F1/Free)"
+          echo "Commit: $GITHUB_SHA"
           echo "Artifact SHA-256: $(awk '{print $1}' gradex-frontend.sha256)"

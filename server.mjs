@@ -122,7 +122,7 @@ async function serveStatic(request, response) {
     return
   }
 
-  const url = new URL(request.url ?? '/', 'http://localhost')
+  const url = new URL(request.url ?? '/', 'http://gradex.local')
   const candidate = safePath(url.pathname)
   if (candidate === null) {
     response.writeHead(404, securityHeaders)
