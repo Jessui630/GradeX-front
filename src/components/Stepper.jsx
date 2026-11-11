@@ -5,7 +5,11 @@ export function Stepper({ paso, pasos }) {
         const numero = indice + 1
         const estado = numero < paso ? 'complete' : numero === paso ? 'current' : 'pending'
         return (
-          <li className={`stepper-item is-${estado}`} key={etiqueta}>
+          <li
+            aria-current={estado === 'current' ? 'step' : undefined}
+            className={`stepper-item is-${estado}`}
+            key={etiqueta}
+          >
             <span className="stepper-number">{numero}</span>
             <span>{etiqueta}</span>
           </li>

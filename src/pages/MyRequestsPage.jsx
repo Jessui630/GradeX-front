@@ -9,7 +9,7 @@ import { mensajeDeError } from '../lib/errors'
 const FILTROS = [
   { valor: '', etiqueta: 'Todas' },
   { valor: 'BORRADOR', etiqueta: 'Borradores' },
-  { valor: 'PENDIENTE_ASIGNACION', etiqueta: 'Pendientes de asignación' },
+  { valor: 'PENDIENTE_ASIGNACION', etiqueta: 'Pendientes' },
 ]
 
 export function MyRequestsPage() {
@@ -46,6 +46,7 @@ export function MyRequestsPage() {
         <div>
           <p className="eyebrow">Seguimiento</p>
           <h1>Mis solicitudes</h1>
+          <p>Consulta el estado de tus evaluaciones.</p>
         </div>
         <Link className="button button-primary" to="/app/evaluaciones/nueva">
           <Icon name="spark" size={18} /> Nueva evaluación
@@ -74,12 +75,13 @@ export function MyRequestsPage() {
       {error ? <InlineError>{error}</InlineError> : null}
 
       {cargando ? (
-        <PageLoader label="Cargando tus solicitudes…" />
+        <PageLoader compact label="Cargando tus solicitudes…" />
       ) : !datos?.elementos?.length ? (
         <EmptyState
           actionLabel="Crear mi primera evaluación"
           actionTo="/app/evaluaciones/nueva"
-          description="Cuando registres un producto y envíes su evidencia, aparecerá aquí con su estado y seguimiento."
+          compact
+          description="Registra un producto y adjunta su evidencia."
           icon="clipboard"
           title={estado ? 'No hay solicitudes con este filtro' : 'Aún no tienes solicitudes'}
         />

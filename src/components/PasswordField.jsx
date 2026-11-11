@@ -11,6 +11,7 @@ export function PasswordField({
   placeholder,
   disabled = false,
   hint,
+  required = true,
 }) {
   const [visible, setVisible] = useState(false)
   const errorId = error ? `${id}-error` : undefined
@@ -23,7 +24,7 @@ export function PasswordField({
         <input
           aria-describedby={[errorId, hintId].filter(Boolean).join(' ') || undefined}
           aria-invalid={Boolean(error)}
-          aria-required="true"
+          aria-required={required}
           autoComplete={autoComplete}
           disabled={disabled}
           id={id}

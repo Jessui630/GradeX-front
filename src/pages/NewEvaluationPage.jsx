@@ -338,6 +338,24 @@ export function NewEvaluationPage() {
 
   const evidenciasRequeridas = requisitos?.evidencias?.filter((tipo) => tipo.obligatorio) ?? []
   const evidenciasOpcionales = requisitos?.evidencias?.filter((tipo) => !tipo.obligatorio) ?? []
+  const categoriaSeleccionada = categorias.find(
+    (categoria) => categoria.idCategoria === categoriaId,
+  )
+  const marcaSeleccionada = marcas.find(
+    (marca) => String(marca.idMarca) === formulario.idMarca,
+  )
+  const datosRevision = [
+    { etiqueta: 'Producto', valor: formulario.nombre },
+    { etiqueta: 'Categoría', valor: categoriaSeleccionada?.nombre },
+    { etiqueta: 'Marca', valor: marcaSeleccionada?.nombre },
+    { etiqueta: 'Modelo', valor: formulario.modelo },
+    { etiqueta: 'SKU', valor: formulario.sku },
+    { etiqueta: 'Número de serie', valor: formulario.numeroSerie },
+    { etiqueta: 'IMEI', valor: formulario.imei },
+    { etiqueta: 'Accesorios', valor: formulario.accesorios },
+    { etiqueta: 'Descripción', valor: formulario.descripcion, ancho: true },
+    { etiqueta: 'Observaciones', valor: formulario.observaciones, ancho: true },
+  ].filter((dato) => dato.valor)
 
   if (cargando) return <PageLoader label="Preparando tu nueva evaluación…" />
 
@@ -352,8 +370,8 @@ export function NewEvaluationPage() {
           <h1>Tu evaluación ya está en cola.</h1>
           <p>
             Folio <strong>{resultado.folio}</strong>. Estado
-            <StatusBadge codigo={resultado.estadoCodigo} />. La asignación de especialista
-            se realizará desde el flujo administrativo.
+            <StatusBadge codigo={resultado.estadoCodigo} />. Recibirás novedades en Mis
+            solicitudes.
           </p>
           <div className="hero-actions">
             <Link className="button button-primary" to={`/app/solicitudes/${resultado.idSolicitud}`}>
@@ -373,8 +391,9 @@ export function NewEvaluationPage() {
     <div className="workspace-page">
       <header className="page-heading">
         <div>
-          <p className="eyebrow">Nueva evaluación</p>
-          <h1>Registra tu producto</h1>
+          <p className="eyebrow">Solicitud</p>
+          <h1>Nueva evaluación</h1>
+          <p>Completa los datos en cuatro pasos.</p>
         </div>
         <Link className="button button-quiet" to="/app/solicitudes">
           <Icon name="arrow-left" size={16} /> Mis solicitudes
@@ -397,12 +416,12 @@ export function NewEvaluationPage() {
             </div>
           </div>
           <p className="panel-note">
-            La configuración de la categoría define los campos y la evidencia necesarios.
+            Los campos y la evidencia dependen de la categoría.
           </p>
           {categorias.length === 0 ? (
             <div className="empty-state compact">
-              <h2>No hay categorías activas</h2>
-              <p>El catálogo debe configurarse por el flujo administrativo.</p>
+              <h2>No hay categorías disponibles</h2>
+              <p>Intenta de nuevo más tarde.</p>
             </div>
           ) : (
             <div className="category-grid">
@@ -438,16 +457,13 @@ export function NewEvaluationPage() {
               <p className="card-kicker">Paso 2</p>
               <h2>Datos del producto</h2>
             </div>
-            <span className="badge badge-neutral">
-              {categorias.find((categoria) => categoria.idCategoria === categoriaId)?.nombre}
-            </span>
+            <span className="badge badge-neutral">{categoriaSeleccionada?.nombre}</span>
           </div>
 
           {draft ? (
             <p className="alert alert-success">
               <Icon name="check" size={18} />
-              Este producto ya tiene un borrador. Para cambiar sus datos, inicia una nueva
-              evaluación.
+              Este producto ya está guardado. Para editarlo, inicia una nueva evaluación.
             </p>
           ) : null}
 
@@ -464,6 +480,7 @@ export function NewEvaluationPage() {
                     </label>
                     <textarea
                       aria-invalid={Boolean(errores[definicion.clave])}
+                      aria-required={obligatorio}
                       disabled={Boolean(draft)}
                       id={definicion.clave}
                       maxLength={max}
@@ -486,6 +503,7 @@ export function NewEvaluationPage() {
                   key={definicion.clave}
                   label={`${definicion.etiqueta}${obligatorio ? ' *' : ''}`}
                   onChange={cambiar(definicion.clave)}
+                  required={obligatorio}
                   value={formulario[definicion.clave]}
                 />
               )
@@ -494,6 +512,7 @@ export function NewEvaluationPage() {
             <div className="field">
               <label htmlFor="idMarca">Marca {camposRequeridos.has('MARCA') ? '*' : ''}</label>
               <select
+                aria-required={camposRequeridos.has('MARCA')}
                 disabled={Boolean(draft) || marcas.length === 0}
                 id="idMarca"
                 onChange={cambiar('idMarca')}
@@ -505,13 +524,14 @@ export function NewEvaluationPage() {
                 ))}
               </select>
               {marcas.length === 0 ? (
-                <p className="field-hint">Esta categoría no tiene marcas activas configuradas.</p>
+                <p className="field-hint">No hay marcas disponibles para esta categoría.</p>
               ) : null}
             </div>
 
             <div className="field field-wide">
-              <label htmlFor="observaciones">Observaciones para el especialista</label>
+              <label htmlFor="observaciones">Observaciones</label>
               <textarea
+                aria-required={false}
                 disabled={Boolean(draft)}
                 id="observaciones"
                 maxLength={1000}
@@ -551,7 +571,7 @@ export function NewEvaluationPage() {
             )}
           </div>
           <p className="panel-note">
-            Las imágenes se guardan en almacenamiento privado y solo tú puedes consultarlas.
+            Tus imágenes son privadas y solo tú puedes verlas.
           </p>
 
           {requisitos?.evidencias?.length ? (
@@ -572,7 +592,7 @@ export function NewEvaluationPage() {
           ) : (
             <div className="alert alert-error" role="alert">
               <Icon name="alert" size={18} />
-              La categoría no tiene requisitos de evidencia configurados. No se puede enviar.
+              Esta categoría no tiene requisitos de evidencia. No se puede enviar.
             </div>
           )}
 
@@ -604,16 +624,12 @@ export function NewEvaluationPage() {
             </div>
           </div>
           <dl className="review-grid">
-            <div><dt>Producto</dt><dd>{formulario.nombre}</dd></div>
-            <div><dt>Categoría</dt><dd>{categorias.find((categoria) => categoria.idCategoria === categoriaId)?.nombre}</dd></div>
-            <div><dt>Marca</dt><dd>{marcas.find((marca) => String(marca.idMarca) === formulario.idMarca)?.nombre ?? 'Sin marca'}</dd></div>
-            <div><dt>Modelo</dt><dd>{formulario.modelo || 'No indicado'}</dd></div>
-            <div><dt>SKU</dt><dd>{formulario.sku || 'No indicado'}</dd></div>
-            <div><dt>Número de serie</dt><dd>{formulario.numeroSerie || 'No indicado'}</dd></div>
-            <div><dt>IMEI</dt><dd>{formulario.imei || 'No indicado'}</dd></div>
-            <div><dt>Accesorios</dt><dd>{formulario.accesorios || 'No indicado'}</dd></div>
-            <div className="review-wide"><dt>Descripción</dt><dd>{formulario.descripcion || 'Sin descripción'}</dd></div>
-            <div className="review-wide"><dt>Observaciones</dt><dd>{formulario.observaciones || 'Sin observaciones'}</dd></div>
+            {datosRevision.map((dato) => (
+              <div className={dato.ancho ? 'review-wide' : undefined} key={dato.etiqueta}>
+                <dt>{dato.etiqueta}</dt>
+                <dd>{dato.valor}</dd>
+              </div>
+            ))}
           </dl>
           <div className="review-evidence">
             <h3>Evidencia adjunta</h3>
@@ -640,7 +656,7 @@ export function NewEvaluationPage() {
 
       {paso > 1 && paso < 5 ? (
         <p className="draft-note">
-          {draft ? <>Borrador <strong>{draft.folio}</strong> guardado. Puedes retomarlo desde Mis solicitudes.</> : null}
+          {draft ? <>Borrador <strong>{draft.folio}</strong> guardado.</> : null}
         </p>
       ) : null}
     </div>
