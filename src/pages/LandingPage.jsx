@@ -6,24 +6,24 @@ const beneficios = [
   {
     icon: 'users',
     titulo: 'Evaluación humana',
-    texto: 'Especialistas acreditados revisan cada producto con criterios claros.',
+    texto: 'Especialistas revisan cada producto con criterios claros.',
   },
   {
     icon: 'certificate',
-    titulo: 'Certificado verificable',
-    texto: 'Cada evaluación concluida deja un resultado consultable y compartible.',
+    titulo: 'Resultado verificable',
+    texto: 'Cada evaluación deja un resultado consultable.',
   },
   {
     icon: 'shield',
-    titulo: 'Acceso seguro',
-    texto: 'Tu cuenta se protege con sesiones HttpOnly y verificación de contraseñas.',
+    titulo: 'Cuenta protegida',
+    texto: 'Tu cuenta y tus datos están protegidos.',
   },
 ]
 
 const pasos = [
-  ['Crea tu cuenta', 'Regístrate como solicitante con tus datos básicos.'],
-  ['Registra tu producto', 'Completa la información y adjunta la evidencia solicitada.'],
-  ['Recibe tu evaluación', 'Un especialista revisa el producto y emite su dictamen.'],
+  ['Crea tu cuenta', 'Regístrate con tus datos básicos.'],
+  ['Registra tu producto', 'Agrega los datos y la evidencia.'],
+  ['Recibe tu evaluación', 'Un especialista revisa y emite el resultado.'],
 ]
 
 export function LandingPage() {
@@ -61,8 +61,8 @@ export function LandingPage() {
               <span> Compra con confianza.</span>
             </h1>
             <p className="hero-lede">
-              Evalúa la originalidad de tus productos con especialistas y evidencia
-              verificable. Sin decisiones automáticas: revisión humana y resultado documentado.
+              Verifica tus productos con especialistas y evidencia real. Revisión humana y un
+              resultado claro.
             </p>
             <div className="hero-actions">
               <Link className="button button-primary button-large" to="/registro">
@@ -75,8 +75,7 @@ export function LandingPage() {
             </div>
             <p className="microcopy">
               <Icon name="lock" size={15} />
-              Registro exclusivo para solicitantes. Tu contraseña nunca se muestra ni se
-              guarda en texto plano.
+              Registro para solicitantes. Tu contraseña nunca se guarda en texto plano.
             </p>
           </div>
 
@@ -95,11 +94,8 @@ export function LandingPage() {
               </div>
               <div>
                 <p className="card-kicker">Expediente de producto</p>
-                <h2>Información, evidencia y revisión</h2>
-                <p>
-                  El especialista documenta su análisis. El resultado queda disponible al
-                  finalizar la evaluación.
-                </p>
+                <h2>Datos, evidencia y revisión</h2>
+                <p>El especialista revisa la evidencia y documenta el resultado.</p>
               </div>
             </div>
               <div className="verification-checks">
@@ -127,7 +123,7 @@ export function LandingPage() {
 
         <section aria-labelledby="beneficios-titulo" className="feature-section">
           <div className="section-heading">
-            <p className="eyebrow">Una evaluación que puedes entender</p>
+            <p className="eyebrow">Evaluación clara</p>
             <h2 id="beneficios-titulo">Claridad antes de decidir</h2>
           </div>
           <div className="feature-grid">
@@ -145,8 +141,8 @@ export function LandingPage() {
 
         <section aria-labelledby="pasos-titulo" className="steps-section">
           <div className="section-heading">
-            <p className="eyebrow">De la duda al resultado</p>
-            <h2 id="pasos-titulo">Un recorrido simple</h2>
+            <p className="eyebrow">Así funciona</p>
+            <h2 id="pasos-titulo">Tres pasos</h2>
           </div>
           <ol className="steps-grid">
             {pasos.map(([titulo, texto], indice) => (
@@ -161,12 +157,12 @@ export function LandingPage() {
 
         <section className="cta-panel">
           <div>
-            <p className="eyebrow">Tu primera evaluación empieza aquí</p>
-            <h2>Crea tu cuenta de solicitante</h2>
-            <p>Sin roles seleccionables ni accesos anticipados. Solo tus datos básicos.</p>
+            <p className="eyebrow">Empieza hoy</p>
+            <h2>Crea tu cuenta</h2>
+            <p>Solo necesitas tus datos básicos.</p>
           </div>
           <Link className="button button-light button-large" to="/registro">
-            Crear mi cuenta
+            Crear cuenta
             <Icon name="arrow-right" size={19} />
           </Link>
         </section>
@@ -174,8 +170,8 @@ export function LandingPage() {
 
       <footer className="public-footer">
         <Brand />
-        <p>Evaluación profesional de originalidad de productos.</p>
-        <Link to="/login">Acceso a mi cuenta</Link>
+        <p>Evaluación profesional de originalidad.</p>
+        <Link to="/login">Iniciar sesión</Link>
       </footer>
     </div>
   )

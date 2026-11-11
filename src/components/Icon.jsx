@@ -24,6 +24,7 @@ const paths = {
   home: 'M3 11l9-8 9 8 M5 10v11h14V10',
   info: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z M12 11v5 M12 8h.01',
   'arrow-left': 'M19 12H5 M11 6l-6 6 6 6',
+  'chevron-down': 'M6 9l6 6 6-6',
 }
 
 export function Icon({ name, size = 20, className = '' }) {
