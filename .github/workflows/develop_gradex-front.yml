@@ -51,6 +51,9 @@ jobs:
           VITE_API_URL: /api
         run: npm run build
 
+      - name: Verify real React production build
+        run: npm run verify:build
+
       - name: Determine production artifact eligibility
         id: production
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
@@ -70,6 +73,16 @@ jobs:
           zip -r ../gradex-frontend.zip .
           cd ..
           sha256sum gradex-frontend.zip > gradex-frontend.sha256
+
+      - name: Verify packaged production artifact
+        if: steps.production.outputs.enabled == 'true'
+        run: |
+          rm -rf artifact-check
+          mkdir artifact-check
+          unzip -q gradex-frontend.zip -d artifact-check
+          node scripts/verify-production-build.mjs artifact-check/dist
+          unzip -p gradex-frontend.zip build-info.json | \
+            jq -e --arg sha "$GITHUB_SHA" '.commit == $sha and .ref == "refs/heads/main"' >/dev/null
 
       - name: Upload production artifact
         if: steps.production.outputs.enabled == 'true'

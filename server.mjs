@@ -1,6 +1,6 @@
 import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
-import { createServer } from 'node:http'
+import { createServer, request as httpRequest } from 'node:http'
 import { request as httpsRequest } from 'node:https'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -8,6 +8,16 @@ import { fileURLToPath } from 'node:url'
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'dist')
 const backendOrigin = (process.env.BACKEND_ORIGIN ??
   'https://gradex-api-bxbrgzbvf8bxa6h8.westus-01.azurewebsites.net').replace(/\/+$/, '')
+const backendUrl = new URL(backendOrigin)
+const backendRequest =
+  backendUrl.protocol === 'https:'
+    ? httpsRequest
+    : backendUrl.protocol === 'http:'
+      ? httpRequest
+      : null
+if (!backendRequest) {
+  throw new Error(`BACKEND_ORIGIN debe usar http o https: ${backendOrigin}`)
+}
 const port = Number(process.env.PORT ?? 8080)
 
 const mime = new Map([
@@ -67,7 +77,7 @@ function proxy(request, response) {
   headers['x-forwarded-for'] = request.socket.remoteAddress ?? ''
   delete headers.connection
 
-  const upstream = httpsRequest(
+  const upstream = backendRequest(
     target,
     { method: request.method, headers, timeout: 60_000 },
     (upstreamResponse) => {
@@ -153,13 +163,15 @@ async function serveStatic(request, response) {
   }
 
   const extension = path.extname(file).toLowerCase()
-  const isIndex = path.basename(file) === 'index.html'
+  const basename = path.basename(file)
+  const isIndex = basename === 'index.html'
+  const isPwaEntry = basename === 'sw.js' || basename === 'registerSW.js'
   const isImmutable = url.pathname.startsWith('/assets/')
   const headers = {
     ...securityHeaders,
     'Content-Type': mime.get(extension) ?? 'application/octet-stream',
     'Content-Length': fileStat.size,
-    'Cache-Control': isIndex || extension === '.webmanifest' || path.basename(file) === 'sw.js'
+    'Cache-Control': isIndex || extension === '.webmanifest' || isPwaEntry
       ? 'no-cache, no-store, must-revalidate'
       : isImmutable
         ? 'public, max-age=31536000, immutable'
@@ -175,7 +187,8 @@ async function serveStatic(request, response) {
 }
 
 const server = createServer((request, response) => {
-  if (request.url === '/api' || request.url?.startsWith('/api/')) {
+  const requestPath = (request.url ?? '/').split('?')[0]
+  if (requestPath === '/api' || requestPath.startsWith('/api/')) {
     proxy(request, response)
     return
   }

@@ -6,7 +6,14 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       registerType: 'autoUpdate',
+      injectRegister: 'script',
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
+      },
       manifest: {
         name: 'GradeX',
         short_name: 'GradeX',
@@ -28,9 +35,6 @@ export default defineConfig({
             type: 'image/png',
           },
         ],
-      },
-      workbox: {
-        navigateFallbackDenylist: [/^\/api\//],
       },
     }),
   ],
