@@ -149,9 +149,16 @@ jobs:
             exit 1
           fi
 
-          PLAN_JSON=$(az appservice plan show --ids "$PLAN_ID" --query "{sku:sku.name,tier:sku.tier,capacity:sku.capacity,reserved:reserved}" -o json)
+          PLAN_JSON=$(az resource show --ids "$PLAN_ID" -o json)
           test -n "$PLAN_JSON"
-          echo "$PLAN_JSON" | jq -e '.sku == "F1" and .tier == "Free" and .capacity == 1 and .reserved == true' >/dev/null
+          echo "$PLAN_JSON" | jq -e '
+            .name == "ASP-gradexrg-8bed" and
+            .kind == "linux" and
+            .sku.name == "F1" and
+            .sku.tier == "Free" and
+            .sku.capacity == 1 and
+            .properties.reserved == true
+          ' >/dev/null
 
       - name: Configure Node 24 startup
         run: |
