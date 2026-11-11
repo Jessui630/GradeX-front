@@ -2,17 +2,10 @@ import { useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { Brand } from '../components/Brand'
 import { Icon } from '../components/Icon'
+import { UserMenu } from '../components/UserMenu'
 import { useAuth } from '../features/auth/auth-context'
 import { etiquetaRol, ROLE, tieneRol } from '../features/auth/roles'
-
-function iniciales(nombre) {
-  return nombre
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((parte) => parte[0]?.toUpperCase())
-    .join('')
-}
+import { iniciales } from '../lib/iniciales'
 
 export function AppShell() {
   const { usuario, cerrarSesion, errorSesion } = useAuth()
@@ -27,7 +20,6 @@ export function AppShell() {
       to: '/app/evaluaciones/nueva',
       label: 'Nueva evaluación',
       icon: 'spark',
-      primary: true,
     })
     enlaces.push({ to: '/app/solicitudes', label: 'Mis solicitudes', icon: 'clipboard' })
   }
@@ -71,9 +63,7 @@ export function AppShell() {
         >
           {enlaces.map((enlace) => (
             <NavLink
-              className={({ isActive }) =>
-                `nav-link${enlace.primary ? ' nav-link-primary' : ''}${isActive ? ' is-active' : ''}`
-              }
+              className={({ isActive }) => `nav-link${isActive ? ' is-active' : ''}`}
               end={enlace.end}
               key={enlace.to}
               onClick={() => setMenuAbierto(false)}
@@ -83,26 +73,30 @@ export function AppShell() {
               {enlace.label}
             </NavLink>
           ))}
-          <button
-            className="nav-link nav-logout"
-            disabled={saliendo}
-            onClick={salir}
-            type="button"
-          >
-            <Icon name="logout" size={18} />
-            {saliendo ? 'Saliendo…' : 'Cerrar sesión'}
-          </button>
+
+          <div className="mobile-account">
+            <div className="mobile-account-identity">
+              <span aria-hidden="true" className="avatar">
+                {iniciales(usuario?.nombreCompleto ?? '')}
+              </span>
+              <span>
+                <strong>{usuario?.nombreCompleto}</strong>
+                <small>{usuario?.roles?.map(etiquetaRol).join(' · ')}</small>
+              </span>
+            </div>
+            <button
+              className="nav-link nav-logout"
+              disabled={saliendo}
+              onClick={salir}
+              type="button"
+            >
+              <Icon name="logout" size={18} />
+              {saliendo ? 'Saliendo…' : 'Cerrar sesión'}
+            </button>
+          </div>
         </nav>
 
-        <div className="workspace-user">
-          <span aria-hidden="true" className="avatar">
-            {iniciales(usuario?.nombreCompleto ?? '')}
-          </span>
-          <span className="workspace-user-data">
-            <strong>{usuario?.nombreCompleto}</strong>
-            <small>{usuario?.roles?.map(etiquetaRol).join(' · ')}</small>
-          </span>
-        </div>
+        <UserMenu onLogout={salir} saliendo={saliendo} usuario={usuario} />
       </header>
 
       {errorSesion ? (
@@ -117,8 +111,8 @@ export function AppShell() {
       </main>
 
       <footer className="workspace-footer">
-        <span>GradeX · Evaluación profesional de originalidad</span>
-        <Link to="/">Inicio público</Link>
+        <span>GradeX · Evaluación de originalidad</span>
+        <Link to="/">Inicio</Link>
       </footer>
     </div>
   )

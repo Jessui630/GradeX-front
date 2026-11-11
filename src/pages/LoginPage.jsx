@@ -73,29 +73,29 @@ export function LoginPage() {
         <Brand light to="/" />
         <div className="auth-aside-copy">
           <p className="eyebrow eyebrow-light">Acceso</p>
-          <h1>Todo tu proceso de evaluación, en un solo lugar.</h1>
-          <p>Consulta solicitudes, revisa asignaciones o administra según tu rol.</p>
+          <h1>Tus evaluaciones, en un solo lugar.</h1>
+          <p>Revisa tus solicitudes y resultados cuando quieras.</p>
         </div>
         <ul className="aside-points">
           <li>
-            <Icon name="check" size={17} /> Acceso por rol confirmado
+            <Icon name="check" size={17} /> Acceso con tu cuenta
           </li>
           <li>
-            <Icon name="check" size={17} /> Sesión HttpOnly protegida
+            <Icon name="check" size={17} /> Sesión protegida
           </li>
           <li>
-            <Icon name="check" size={17} /> Errores de acceso no enumerables
+            <Icon name="check" size={17} /> Tus datos, bajo control
           </li>
         </ul>
-        <p className="aside-footnote">GradeX · Evaluación profesional de originalidad</p>
+        <p className="aside-footnote">GradeX · Evaluación de originalidad</p>
       </aside>
 
       <main className="auth-main" id="contenido-principal">
         <div className="auth-card">
           <div className="auth-card-header">
-            <span className="eyebrow">Acceso</span>
+            <span className="eyebrow">Tu cuenta</span>
             <h2>Inicia sesión</h2>
-            <p>Usa el correo y la contraseña de tu cuenta.</p>
+            <p>Ingresa con tu correo y contraseña.</p>
           </div>
 
           {registroExitoso ? (

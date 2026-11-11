@@ -1,11 +1,18 @@
 import { Link } from 'react-router-dom'
 import { Icon } from './Icon'
 
-export function EmptyState({ icon = 'clipboard', title, description, actionTo, actionLabel }) {
+export function EmptyState({
+  icon = 'clipboard',
+  title,
+  description,
+  actionTo,
+  actionLabel,
+  compact = false,
+}) {
   return (
-    <section className="empty-state">
+    <section className={`empty-state${compact ? ' compact' : ''}`}>
       <span className="state-icon">
-        <Icon name={icon} size={26} />
+        <Icon name={icon} size={compact ? 22 : 26} />
       </span>
       <h2>{title}</h2>
       <p>{description}</p>
@@ -19,9 +26,9 @@ export function EmptyState({ icon = 'clipboard', title, description, actionTo, a
   )
 }
 
-export function PageLoader({ label = 'Cargando información…' }) {
+export function PageLoader({ label = 'Cargando información…', compact = false }) {
   return (
-    <div className="page-loader" role="status">
+    <div className={`page-loader${compact ? ' compact' : ''}`} role="status">
       <span className="spinner" />
       <span>{label}</span>
     </div>

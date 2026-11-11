@@ -11,7 +11,24 @@ const png = Buffer.from(
 test('registro, sesión, nueva evaluación, evidencia, envío, consulta y logout', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: /Decide con criterio/ })).toBeVisible()
+  const navegacionPublica = page.getByRole('navigation', { name: 'Acceso' })
+  await expect(navegacionPublica.getByRole('link', { name: 'Inicio' })).toBeVisible()
+  await expect(navegacionPublica.getByRole('link', { name: 'Iniciar sesión' })).toBeVisible()
+  await expect(navegacionPublica.getByRole('link', { name: 'Crear cuenta' })).toBeVisible()
   await page.screenshot({ path: test.info().outputPath('01-landing.png'), fullPage: true })
+
+  const enlaceSaltar = page.getByRole('link', { name: 'Saltar al contenido' })
+  await expect(enlaceSaltar).not.toBeInViewport()
+  await page.keyboard.press('Tab')
+  await expect(enlaceSaltar).toBeInViewport()
+  await page.evaluate(() => document.activeElement?.blur())
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(navegacionPublica.getByRole('link', { name: 'Inicio' })).toBeVisible()
+  await expect(navegacionPublica.getByRole('link', { name: 'Iniciar sesión' })).toBeVisible()
+  await expect(navegacionPublica.getByRole('link', { name: 'Crear cuenta' })).toBeVisible()
+  await page.screenshot({ path: test.info().outputPath('14-landing-mobile.png'), fullPage: true })
+  await page.setViewportSize({ width: 1280, height: 720 })
 
   const pwaActiva = await page.evaluate(async () => {
     const registros = await navigator.serviceWorker?.getRegistrations()
@@ -42,6 +59,12 @@ test('registro, sesión, nueva evaluación, evidencia, envío, consulta y logout
   await expect(page.getByRole('heading', { name: /Hola, Usuario/ })).toBeVisible()
   await page.screenshot({ path: test.info().outputPath('03-panel.png'), fullPage: true })
 
+  await page.getByRole('button', { name: 'Menú de cuenta' }).click()
+  await expect(page.getByRole('menuitem', { name: 'Cerrar sesión' })).toBeVisible()
+  await page.screenshot({ path: test.info().outputPath('09-menu-cuenta.png'), fullPage: true })
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('menuitem', { name: 'Cerrar sesión' })).toBeHidden()
+
   await page.reload()
   await expect(page.getByRole('heading', { name: /Hola, Usuario/ })).toBeVisible()
 
@@ -52,6 +75,7 @@ test('registro, sesión, nueva evaluación, evidencia, envío, consulta y logout
   await page.getByRole('link', { name: 'Perfil', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Perfil' })).toBeVisible()
   await expect(page.getByText(correo)).toBeVisible()
+  await page.screenshot({ path: test.info().outputPath('10-perfil.png'), fullPage: true })
   await page.getByRole('link', { name: 'Resumen' }).click()
   await expect(page.getByRole('heading', { name: /Hola, Usuario/ })).toBeVisible()
 
@@ -59,6 +83,7 @@ test('registro, sesión, nueva evaluación, evidencia, envío, consulta y logout
   await expect(page).toHaveURL(/\/app\/evaluaciones\/nueva$/)
   await page.getByRole('button', { name: /Sneakers/ }).click()
   await expect(page.getByRole('heading', { name: 'Datos del producto' })).toBeVisible()
+  await page.screenshot({ path: test.info().outputPath('12-paso-producto.png'), fullPage: true })
 
   await page.getByLabel(/Nombre del producto/).fill('Producto UI Sprint 1')
   await page.getByLabel('Modelo', { exact: true }).fill('Modelo UI')
@@ -80,6 +105,8 @@ test('registro, sesión, nueva evaluación, evidencia, envío, consulta y logout
   await page.getByRole('button', { name: /Revisar solicitud/ }).click()
   await expect(page.getByRole('heading', { name: 'Revisa antes de enviar' })).toBeVisible()
   await expect(page.getByText('Producto UI Sprint 1').first()).toBeVisible()
+  await expect(page.getByText('No indicado')).toHaveCount(0)
+  await page.screenshot({ path: test.info().outputPath('13-paso-revision.png'), fullPage: true })
   await page.getByRole('button', { name: /Enviar solicitud/ }).click()
 
   await expect(page.getByRole('heading', { name: /Tu evaluación ya está en cola/ })).toBeVisible()
@@ -101,6 +128,7 @@ test('registro, sesión, nueva evaluación, evidencia, envío, consulta y logout
   await page.screenshot({ path: test.info().outputPath('07-mobile.png'), fullPage: true })
   await page.getByRole('button', { name: 'Abrir menú' }).click()
   await expect(page.getByRole('button', { name: 'Cerrar sesión' })).toBeVisible()
+  await page.screenshot({ path: test.info().outputPath('11-mobile-menu.png'), fullPage: true })
 
   await page.getByRole('button', { name: 'Cerrar sesión' }).click()
   await expect(page).toHaveURL(/\/login$/)

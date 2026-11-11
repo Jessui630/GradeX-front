@@ -40,7 +40,7 @@ export function RequestDetailPage({ id }) {
     }
   }, [idSolicitud, invalida])
 
-  if (cargando) return <PageLoader label="Consultando el seguimiento…" />
+  if (cargando) return <PageLoader label="Cargando la solicitud…" />
   if (error) {
     return (
       <div className="workspace-page">
@@ -52,6 +52,21 @@ export function RequestDetailPage({ id }) {
     )
   }
   if (!detalle) return null
+
+  const datosProducto = [
+    { etiqueta: 'Modelo', valor: detalle.modelo },
+    { etiqueta: 'SKU', valor: detalle.sku },
+    { etiqueta: 'Número de serie', valor: detalle.numeroSerie },
+    { etiqueta: 'IMEI', valor: detalle.imei },
+    { etiqueta: 'Accesorios', valor: detalle.accesorios, ancho: true },
+    { etiqueta: 'Descripción', valor: detalle.descripcion, ancho: true },
+    { etiqueta: 'Observaciones', valor: detalle.observaciones, ancho: true },
+  ].filter((dato) => dato.valor)
+
+  const totalEvidencias = detalle.evidencias.length
+  const seguimientoVisible = detalle.seguimiento.filter(
+    (evento) => evento.titulo !== 'Estado actual',
+  )
 
   return (
     <div className="workspace-page">
@@ -95,18 +110,21 @@ export function RequestDetailPage({ id }) {
             </span>
             <div>
               <p className="card-kicker">Producto</p>
-              <h2>Información registrada</h2>
+              <h2>Datos del producto</h2>
             </div>
           </div>
-          <dl className="review-grid">
-            <div><dt>Modelo</dt><dd>{detalle.modelo || 'No indicado'}</dd></div>
-            <div><dt>SKU</dt><dd>{detalle.sku || 'No indicado'}</dd></div>
-            <div><dt>Número de serie</dt><dd>{detalle.numeroSerie || 'No indicado'}</dd></div>
-            <div><dt>IMEI</dt><dd>{detalle.imei || 'No indicado'}</dd></div>
-            <div className="review-wide"><dt>Accesorios</dt><dd>{detalle.accesorios || 'No indicado'}</dd></div>
-            <div className="review-wide"><dt>Descripción</dt><dd>{detalle.descripcion || 'Sin descripción'}</dd></div>
-            <div className="review-wide"><dt>Observaciones</dt><dd>{detalle.observaciones || 'Sin observaciones'}</dd></div>
-          </dl>
+          {datosProducto.length > 0 ? (
+            <dl className="review-grid">
+              {datosProducto.map((dato) => (
+                <div className={dato.ancho ? 'review-wide' : undefined} key={dato.etiqueta}>
+                  <dt>{dato.etiqueta}</dt>
+                  <dd>{dato.valor}</dd>
+                </div>
+              ))}
+            </dl>
+          ) : (
+            <p className="panel-note">Sin datos adicionales.</p>
+          )}
         </section>
 
         <section className="panel-card">
@@ -119,18 +137,22 @@ export function RequestDetailPage({ id }) {
               <h2>Estado del proceso</h2>
             </div>
           </div>
-          <ol className="timeline">
-            {detalle.seguimiento.map((evento, indice) => (
-              <li key={`${evento.fecha}-${evento.titulo}-${indice}`}>
-                <span className="timeline-dot" />
-                <div>
-                  <strong>{evento.titulo}</strong>
-                  <small>{formatearFecha(evento.fecha)}</small>
-                  {evento.detalle ? <p>{evento.detalle}</p> : null}
-                </div>
-              </li>
-            ))}
-          </ol>
+          {seguimientoVisible.length > 0 ? (
+            <ol className="timeline">
+              {seguimientoVisible.map((evento, indice) => (
+                <li key={`${evento.fecha}-${evento.titulo}-${indice}`}>
+                  <span className="timeline-dot" />
+                  <div>
+                    <strong>{evento.titulo}</strong>
+                    <small>{formatearFecha(evento.fecha)}</small>
+                    {evento.detalle ? <p>{evento.detalle}</p> : null}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="panel-note">Sin movimientos adicionales.</p>
+          )}
           {detalle.especialista ? (
             <p className="detail-footnote">
               <Icon name="users" size={17} /> Especialista asignado: {detalle.especialista.nombre}
@@ -154,12 +176,14 @@ export function RequestDetailPage({ id }) {
             <Icon name="certificate" size={22} />
           </span>
           <div>
-            <p className="card-kicker">Evidencia privada</p>
-            <h2>Fotografías de la solicitud</h2>
+            <p className="card-kicker">Archivos privados</p>
+            <h2>Evidencias</h2>
           </div>
-          <span className="badge badge-neutral">{detalle.evidencias.length} archivo(s)</span>
+          <span className="badge badge-neutral">
+            {totalEvidencias} {totalEvidencias === 1 ? 'archivo' : 'archivos'}
+          </span>
         </div>
-        {detalle.evidencias.length === 0 ? (
+        {totalEvidencias === 0 ? (
           <p className="panel-note">Todavía no hay evidencia adjunta.</p>
         ) : (
           <div className="evidence-grid evidence-grid-large">
@@ -179,8 +203,7 @@ export function RequestDetailPage({ id }) {
         )}
         {detalle.estadoCodigo === 'FINALIZADA' && !detalle.certificadoDisponible ? (
           <p className="detail-footnote">
-            <Icon name="info" size={16} /> El certificado digital se habilitará cuando la HU-010
-            esté implementada. Este detalle no genera certificados ficticios.
+            <Icon name="info" size={16} /> El certificado se habilitará cuando esté disponible.
           </p>
         ) : null}
       </section>
