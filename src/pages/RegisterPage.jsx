@@ -81,8 +81,8 @@ export function RegisterPage() {
         <Brand light to="/" />
         <div className="auth-aside-copy">
           <p className="eyebrow eyebrow-light">Registro de solicitante</p>
-          <h1>Documenta lo que quieres verificar.</h1>
-          <p>Crea tu cuenta para registrar productos y solicitar una evaluación.</p>
+          <h1>Crea tu cuenta y empieza a evaluar.</h1>
+          <p>Registra productos y solicita una evaluación.</p>
         </div>
         <div className="policy-card">
           <p className="policy-title">
@@ -90,20 +90,19 @@ export function RegisterPage() {
           </p>
           <ul>
             <li>Entre {LONGITUD_MINIMA_CONTRASENA} y {LONGITUD_MAXIMA_CONTRASENA} caracteres.</li>
-            <li>Puede incluir espacios y caracteres Unicode.</li>
-            <li>Se normaliza a NFC y se verifica contra contraseñas comprometidas.</li>
+            <li>Puedes usar espacios.</li>
             <li>Nunca se guarda en texto plano.</li>
           </ul>
         </div>
-        <p className="aside-footnote">GradeX · Evaluación profesional de originalidad</p>
+        <p className="aside-footnote">GradeX · Evaluación de originalidad</p>
       </aside>
 
       <main className="auth-main" id="contenido-principal">
         <div className="auth-card auth-card-wide">
           <div className="auth-card-header">
-            <span className="eyebrow">Registro de solicitante</span>
+            <span className="eyebrow">Cuenta</span>
             <h2>Crear cuenta</h2>
-            <p>Completa tus datos para empezar.</p>
+            <p>Completa tus datos.</p>
           </div>
 
           {errorGeneral ? (

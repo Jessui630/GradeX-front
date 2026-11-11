@@ -9,6 +9,7 @@ export function TextField({
   placeholder,
   disabled = false,
   inputMode,
+  required = true,
 }) {
   const errorId = error ? `${id}-error` : undefined
 
@@ -18,7 +19,7 @@ export function TextField({
       <input
         aria-describedby={errorId}
         aria-invalid={Boolean(error)}
-        aria-required="true"
+        aria-required={required}
         autoComplete={autoComplete}
         disabled={disabled}
         id={id}

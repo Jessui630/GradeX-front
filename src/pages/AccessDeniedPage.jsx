@@ -10,8 +10,8 @@ export function AccessDeniedPage() {
       <p className="eyebrow">Acceso restringido</p>
       <h1>Esta área no está disponible para tu rol</h1>
       <p>
-        El backend confirmó tus permisos actuales. Si necesitas acceso, solicita la
-        revisión de un administrador.
+        Tu cuenta no tiene permiso para esta sección. Si necesitas acceso, contacta a un
+        administrador.
       </p>
       <Link className="button button-primary" to="/app">
         Volver a mi panel
