@@ -11,10 +11,14 @@ const png = Buffer.from(
 test('registro, sesión, nueva evaluación, evidencia, envío, consulta y logout', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: /Decide con criterio/ })).toBeVisible()
-  const navegacionPublica = page.getByRole('navigation', { name: 'Acceso' })
-  await expect(navegacionPublica.getByRole('link', { name: 'Inicio' })).toBeVisible()
-  await expect(navegacionPublica.getByRole('link', { name: 'Iniciar sesión' })).toBeVisible()
-  await expect(navegacionPublica.getByRole('link', { name: 'Crear cuenta' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Crear cuenta' })).toHaveCount(1)
+  await expect(page.getByRole('link', { name: 'Iniciar sesión' })).toHaveCount(1)
+  await expect(page.getByRole('navigation', { name: 'Acceso' })).toHaveCount(0)
+  await expect(
+    page.getByText(
+      'Registro para solicitantes. Tu contraseña nunca se guarda en texto plano.',
+    ),
+  ).toHaveCount(0)
   await page.screenshot({ path: test.info().outputPath('01-landing.png'), fullPage: true })
 
   const enlaceSaltar = page.getByRole('link', { name: 'Saltar al contenido' })
@@ -24,9 +28,8 @@ test('registro, sesión, nueva evaluación, evidencia, envío, consulta y logout
   await page.evaluate(() => document.activeElement?.blur())
 
   await page.setViewportSize({ width: 390, height: 844 })
-  await expect(navegacionPublica.getByRole('link', { name: 'Inicio' })).toBeVisible()
-  await expect(navegacionPublica.getByRole('link', { name: 'Iniciar sesión' })).toBeVisible()
-  await expect(navegacionPublica.getByRole('link', { name: 'Crear cuenta' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Crear cuenta' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Iniciar sesión' })).toBeVisible()
   await page.screenshot({ path: test.info().outputPath('14-landing-mobile.png'), fullPage: true })
   await page.setViewportSize({ width: 1280, height: 720 })
 
@@ -36,7 +39,13 @@ test('registro, sesión, nueva evaluación, evidencia, envío, consulta y logout
   })
   expect(pwaActiva).toBe(true)
 
-  await page.getByRole('link', { name: 'Crear cuenta' }).first().click()
+  await page.getByRole('link', { name: 'Iniciar sesión' }).click()
+  await expect(page).toHaveURL(/\/login$/)
+  await expect(page.getByRole('heading', { name: 'Inicia sesión' })).toBeVisible()
+  await page.goBack()
+  await expect(page.getByRole('heading', { name: /Decide con criterio/ })).toBeVisible()
+
+  await page.getByRole('link', { name: 'Crear cuenta' }).click()
   await expect(page).toHaveURL(/\/registro$/)
   await page.getByLabel('Nombre completo').fill('Usuario UI Sprint 1')
   await page.getByLabel('Correo electrónico').fill(correo)
