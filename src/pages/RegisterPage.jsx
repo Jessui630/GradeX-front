@@ -6,7 +6,6 @@ import { PasswordField } from '../components/PasswordField'
 import { TextField } from '../components/TextField'
 import { useAuth } from '../features/auth/auth-context'
 import {
-  LONGITUD_MAXIMA_CONTRASENA,
   LONGITUD_MINIMA_CONTRASENA,
   validarRegistro,
 } from '../features/auth/validation'
@@ -84,16 +83,6 @@ export function RegisterPage() {
           <h1>Crea tu cuenta y empieza a evaluar.</h1>
           <p>Registra productos y solicita una evaluación.</p>
         </div>
-        <div className="policy-card">
-          <p className="policy-title">
-            <Icon name="lock" size={17} /> Tu contraseña
-          </p>
-          <ul>
-            <li>Entre {LONGITUD_MINIMA_CONTRASENA} y {LONGITUD_MAXIMA_CONTRASENA} caracteres.</li>
-            <li>Puedes usar espacios.</li>
-            <li>Nunca se guarda en texto plano.</li>
-          </ul>
-        </div>
         <p className="aside-footnote">GradeX · Evaluación de originalidad</p>
       </aside>
 
@@ -135,23 +124,27 @@ export function RegisterPage() {
             <div className="form-grid">
               <PasswordField
                 autoComplete="new-password"
+                describedBy="contrasena-hint"
                 error={errores.contrasena}
-                hint={`Mínimo ${LONGITUD_MINIMA_CONTRASENA} caracteres. Los espacios cuentan.`}
                 id="contrasena"
                 label="Contraseña"
                 onChange={cambiar('contrasena')}
-                placeholder="Crea una frase segura"
+                placeholder="Contraseña"
                 value={formulario.contrasena}
               />
               <PasswordField
                 autoComplete="new-password"
+                describedBy="contrasena-hint"
                 error={errores.confirmacion}
                 id="confirmacion"
                 label="Confirmar contraseña"
                 onChange={cambiar('confirmacion')}
-                placeholder="Repite tu contraseña"
+                placeholder="Confirmar contraseña"
                 value={formulario.confirmacion}
               />
+              <p className="field-hint password-hint" id="contrasena-hint">
+                Mínimo {LONGITUD_MINIMA_CONTRASENA} caracteres. Los espacios cuentan.
+              </p>
             </div>
 
             <button className="button button-primary button-block" disabled={enviando} type="submit">
