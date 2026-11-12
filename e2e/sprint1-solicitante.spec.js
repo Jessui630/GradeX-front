@@ -47,6 +47,35 @@ test('registro, sesión, nueva evaluación, evidencia, envío, consulta y logout
 
   await page.getByRole('link', { name: 'Crear cuenta' }).click()
   await expect(page).toHaveURL(/\/registro$/)
+
+  await expect(page.getByPlaceholder('Contraseña', { exact: true })).toBeVisible()
+  await expect(page.getByPlaceholder('Confirmar contraseña', { exact: true })).toBeVisible()
+  await expect(page.getByText('Mínimo 15 caracteres. Los espacios cuentan.')).toBeVisible()
+  await expect(page.getByText('Tu contraseña', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('Nunca se guarda en texto plano', { exact: true })).toHaveCount(0)
+
+  const contrasenaEscritorio = await page
+    .getByLabel('Contraseña', { exact: true })
+    .boundingBox()
+  const confirmacionEscritorio = await page
+    .getByLabel('Confirmar contraseña')
+    .boundingBox()
+  expect(contrasenaEscritorio).not.toBeNull()
+  expect(confirmacionEscritorio).not.toBeNull()
+  expect(Math.abs(contrasenaEscritorio.y - confirmacionEscritorio.y)).toBeLessThan(2)
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  const contrasenaMovil = await page.getByLabel('Contraseña', { exact: true }).boundingBox()
+  const confirmacionMovil = await page
+    .getByLabel('Confirmar contraseña')
+    .boundingBox()
+  expect(contrasenaMovil).not.toBeNull()
+  expect(confirmacionMovil).not.toBeNull()
+  expect(Math.abs(contrasenaMovil.x - confirmacionMovil.x)).toBeLessThan(2)
+  expect(confirmacionMovil.y).toBeGreaterThan(contrasenaMovil.y)
+  await page.screenshot({ path: test.info().outputPath('02b-registro-mobile.png'), fullPage: true })
+  await page.setViewportSize({ width: 1280, height: 720 })
+
   await page.getByLabel('Nombre completo').fill('Usuario UI Sprint 1')
   await page.getByLabel('Correo electrónico').fill(correo)
   await page.getByLabel('Contraseña', { exact: true }).fill(contrasena)
@@ -66,6 +95,11 @@ test('registro, sesión, nueva evaluación, evidencia, envío, consulta y logout
   await page.getByRole('button', { name: 'Entrar a GradeX' }).click()
   await expect(page).toHaveURL(/\/app$/)
   await expect(page.getByRole('heading', { name: /Hola, Usuario/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Aún no tienes solicitudes' })).toBeVisible()
+  await expect(
+    page.getByText('Cuando hagas tu primera evaluación, aparecerá aquí.'),
+  ).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Crear evaluación' })).toBeVisible()
   await page.screenshot({ path: test.info().outputPath('03-panel.png'), fullPage: true })
 
   await page.getByRole('button', { name: 'Menú de cuenta' }).click()
@@ -76,6 +110,30 @@ test('registro, sesión, nueva evaluación, evidencia, envío, consulta y logout
 
   await page.reload()
   await expect(page.getByRole('heading', { name: /Hola, Usuario/ })).toBeVisible()
+
+  const rutaSolicitudesRecientes = /\/api\/solicitudes\?pagina=1&tamanoPagina=3$/
+  await page.route(rutaSolicitudesRecientes, (route) =>
+    route.fulfill({
+      status: 500,
+      contentType: 'application/problem+json',
+      body: JSON.stringify({
+        title: 'An error occurred while processing your request.',
+        status: 500,
+      }),
+    }),
+  )
+  await page.reload()
+  await expect(
+    page.getByRole('heading', { name: 'No pudimos cargar tus solicitudes' }),
+  ).toBeVisible()
+  await expect(page.getByText('Intenta de nuevo en unos momentos.')).toBeVisible()
+  await expect(page.getByText('An error occurred while processing your request.')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Reintentar' })).toBeVisible()
+  await page.screenshot({ path: test.info().outputPath('15-dashboard-error.png'), fullPage: true })
+
+  await page.unroute(rutaSolicitudesRecientes)
+  await page.getByRole('button', { name: 'Reintentar' }).click()
+  await expect(page.getByRole('heading', { name: 'Aún no tienes solicitudes' })).toBeVisible()
 
   await page.goto('/app/administracion')
   await expect(page.getByRole('heading', { name: /no está disponible para tu rol/ })).toBeVisible()

@@ -26,6 +26,28 @@ export function EmptyState({
   )
 }
 
+export function ErrorState({
+  title = 'No pudimos cargar la información',
+  description = 'Intenta de nuevo en unos momentos.',
+  actionLabel = 'Reintentar',
+  onAction,
+}) {
+  return (
+    <section className="empty-state error-state" role="alert">
+      <span className="state-icon state-icon-warn">
+        <Icon name="alert" size={22} />
+      </span>
+      <h2>{title}</h2>
+      <p>{description}</p>
+      {onAction && actionLabel ? (
+        <button className="button button-secondary" onClick={onAction} type="button">
+          {actionLabel}
+        </button>
+      ) : null}
+    </section>
+  )
+}
+
 export function PageLoader({ label = 'Cargando información…', compact = false }) {
   return (
     <div className={`page-loader${compact ? ' compact' : ''}`} role="status">
