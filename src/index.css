@@ -847,36 +847,6 @@ button:disabled {
   letter-spacing: 0.04em;
 }
 
-.policy-card {
-  position: relative;
-  z-index: 1;
-  max-width: 440px;
-  margin-bottom: 28px;
-  padding: 16px 18px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.07);
-}
-
-.policy-title {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin-bottom: 9px;
-  color: #fff;
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-
-.policy-card ul {
-  display: grid;
-  gap: 5px;
-  padding-left: 17px;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.76rem;
-  line-height: 1.5;
-}
-
 .auth-main {
   display: grid;
   place-items: center;
@@ -918,6 +888,12 @@ button:disabled {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+  align-items: start;
+}
+
+.password-hint {
+  grid-column: 1 / -1;
+  margin-top: -6px;
 }
 
 .field {
@@ -1631,10 +1607,6 @@ button:disabled {
   .aside-points,
   .aside-footnote {
     display: none;
-  }
-
-  .policy-card {
-    margin-bottom: 0;
   }
 
   .auth-main {
@@ -2602,6 +2574,13 @@ button:disabled {
 .empty-state.compact {
   min-height: 0;
   padding: 22px;
+}
+
+.error-state {
+  border-color: #f1d9ae;
+  background:
+    linear-gradient(135deg, rgba(163, 93, 11, 0.07), transparent 55%),
+    var(--surface);
 }
 
 @media (max-width: 860px) {

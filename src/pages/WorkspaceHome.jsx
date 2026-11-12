@@ -1,19 +1,19 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Icon } from '../components/Icon'
-import { EmptyState, InlineError, PageLoader } from '../components/PageState'
+import { EmptyState, ErrorState, PageLoader } from '../components/PageState'
 import { RequestCard } from '../components/RequestCard'
 import { useAuth } from '../features/auth/auth-context'
 import { ROLE, tieneRol } from '../features/auth/roles'
 import { listarSolicitudes } from '../features/solicitudes/solicitudes.api'
-import { mensajeDeError } from '../lib/errors'
 
 export function WorkspaceHome() {
   const { usuario } = useAuth()
   const esSolicitante = tieneRol(usuario, ROLE.SOLICITANTE)
   const [recientes, setRecientes] = useState(null)
   const [cargandoSolicitudes, setCargandoSolicitudes] = useState(esSolicitante)
-  const [errorSolicitudes, setErrorSolicitudes] = useState('')
+  const [errorSolicitudes, setErrorSolicitudes] = useState(false)
+  const [intento, setIntento] = useState(0)
 
   useEffect(() => {
     let activo = true
@@ -24,7 +24,9 @@ export function WorkspaceHome() {
         if (activo) setRecientes(resultado)
       })
       .catch((error) => {
-        if (activo) setErrorSolicitudes(mensajeDeError(error))
+        if (!activo) return
+        console.error('No se pudieron cargar las solicitudes recientes.', error)
+        setErrorSolicitudes(true)
       })
       .finally(() => {
         if (activo) setCargandoSolicitudes(false)
@@ -33,7 +35,14 @@ export function WorkspaceHome() {
     return () => {
       activo = false
     }
-  }, [esSolicitante])
+  }, [esSolicitante, intento])
+
+  function reintentar() {
+    setErrorSolicitudes(false)
+    setRecientes(null)
+    setCargandoSolicitudes(true)
+    setIntento((actual) => actual + 1)
+  }
 
   return (
     <div className="workspace-page">
@@ -78,25 +87,30 @@ export function WorkspaceHome() {
               </Link>
             </div>
 
-            {errorSolicitudes ? <InlineError>{errorSolicitudes}</InlineError> : null}
-            {cargandoSolicitudes ? (
+            {errorSolicitudes ? (
+              <ErrorState
+                description="Intenta de nuevo en unos momentos."
+                onAction={reintentar}
+                title="No pudimos cargar tus solicitudes"
+              />
+            ) : cargandoSolicitudes ? (
               <PageLoader compact label="Cargando tus solicitudes…" />
-            ) : !errorSolicitudes && !recientes?.elementos?.length ? (
+            ) : !recientes?.elementos?.length ? (
               <EmptyState
-                actionLabel="Crear mi primera evaluación"
+                actionLabel="Crear evaluación"
                 actionTo="/app/evaluaciones/nueva"
                 compact
-                description="Registra un producto y adjunta su evidencia."
+                description="Cuando hagas tu primera evaluación, aparecerá aquí."
                 icon="box"
                 title="Aún no tienes solicitudes"
               />
-            ) : recientes?.elementos?.length ? (
+            ) : (
               <div className="request-list">
                 {recientes.elementos.map((solicitud) => (
                   <RequestCard key={solicitud.idSolicitud} solicitud={solicitud} />
                 ))}
               </div>
-            ) : null}
+            )}
           </section>
         </>
       ) : (
