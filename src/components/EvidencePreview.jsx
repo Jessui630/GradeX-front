@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react'
 import { obtenerArchivoEvidencia } from '../features/solicitudes/solicitudes.api'
 import { Icon } from './Icon'
 
-export function EvidencePreview({ idSolicitud, evidencia, className = '' }) {
+export function EvidencePreview({
+  idSolicitud,
+  evidencia,
+  className = '',
+  cargarArchivo = obtenerArchivoEvidencia,
+}) {
   const [url, setUrl] = useState(null)
   const [error, setError] = useState(false)
   const idEvidencia = evidencia?.idEvidencia
@@ -14,7 +19,7 @@ export function EvidencePreview({ idSolicitud, evidencia, className = '' }) {
     let objectUrl
     const controlador = new AbortController()
 
-    obtenerArchivoEvidencia(idSolicitud, idEvidencia, controlador.signal)
+    cargarArchivo(idSolicitud, idEvidencia, controlador.signal)
       .then((blob) => {
         if (!activo) return
         objectUrl = URL.createObjectURL(blob)
@@ -29,7 +34,7 @@ export function EvidencePreview({ idSolicitud, evidencia, className = '' }) {
       controlador.abort()
       if (objectUrl) URL.revokeObjectURL(objectUrl)
     }
-  }, [idSolicitud, idEvidencia])
+  }, [idSolicitud, idEvidencia, cargarArchivo])
 
   return (
     <div className={`evidence-preview ${className}`}>
