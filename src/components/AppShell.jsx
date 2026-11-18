@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { Brand } from '../components/Brand'
 import { Icon } from '../components/Icon'
+import { NotificationsLink } from '../components/NotificationsLink'
 import { UserMenu } from '../components/UserMenu'
 import { useAuth } from '../features/auth/auth-context'
 import { etiquetaRol, ROLE, tieneRol } from '../features/auth/roles'
@@ -22,6 +23,12 @@ export function AppShell() {
       icon: 'spark',
     })
     enlaces.push({ to: '/app/solicitudes', label: 'Mis solicitudes', icon: 'clipboard' })
+  }
+  if (tieneRol(usuario, ROLE.ESPECIALISTA)) {
+    enlaces.push({ to: '/app/especialista', label: 'Asignaciones', icon: 'clipboard' })
+  }
+  if (tieneRol(usuario, ROLE.ADMINISTRADOR)) {
+    enlaces.push({ to: '/app/administracion', label: 'Administración', icon: 'settings' })
   }
   enlaces.push({ to: '/app/perfil', label: 'Perfil', icon: 'user' })
 
@@ -73,6 +80,7 @@ export function AppShell() {
               {enlace.label}
             </NavLink>
           ))}
+          <NotificationsLink onClick={() => setMenuAbierto(false)} />
 
           <div className="mobile-account">
             <div className="mobile-account-identity">

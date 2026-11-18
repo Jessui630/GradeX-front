@@ -9,6 +9,7 @@
     "verify:build": "node scripts/verify-production-build.mjs dist",
     "lint": "eslint .",
     "test": "node --test",
+    "test:coverage": "c8 --all --include=src/** --exclude=src/**/*.test.js --reporter=text --reporter=lcov node --test",
     "test:e2e": "npm run build && playwright test",
     "preview": "vite preview"
   },
@@ -23,6 +24,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
+    "c8": "^12.0.0",
     "eslint": "^10.10.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.6",

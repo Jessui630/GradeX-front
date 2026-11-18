@@ -36,6 +36,9 @@ export function LandingPage() {
               Iniciar sesión
             </Link>
           </div>
+          <Link className="muted-link verify-link" to="/verificar">
+            <Icon name="shield" size={16} /> Verificar un certificado
+          </Link>
         </section>
       </main>
     </div>
