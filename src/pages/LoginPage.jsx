@@ -22,6 +22,9 @@ export function LoginPage() {
 
   const destino = location.state?.from?.pathname ?? '/app'
   const registroExitoso = Boolean(location.state?.registrado)
+  const [contrasenaActualizada] = useState(
+    () => window.sessionStorage.getItem('gradex-contrasena-actualizada') === '1',
+  )
 
   if (cargando) {
     return (
@@ -55,6 +58,7 @@ export function LoginPage() {
         correo: formulario.correo.trim(),
         contrasena: formulario.contrasena,
       })
+      window.sessionStorage.removeItem('gradex-contrasena-actualizada')
       navigate(destino, { replace: true })
     } catch (error) {
       const campos = erroresDeCampo(error)
@@ -102,6 +106,13 @@ export function LoginPage() {
             <div className="alert alert-success" role="status">
               <Icon name="check" size={18} />
               Cuenta creada correctamente. Ya puedes iniciar sesión.
+            </div>
+          ) : null}
+
+          {contrasenaActualizada ? (
+            <div className="alert alert-success" role="status">
+              <Icon name="check" size={18} />
+              Contraseña actualizada. Inicia sesión nuevamente.
             </div>
           ) : null}
 

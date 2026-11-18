@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { PageLoader } from '../components/PageState'
 import { TextField } from '../components/TextField'
@@ -13,7 +14,8 @@ import { iniciales } from '../lib/iniciales'
 import { erroresDeCampo, mensajeDeError } from '../lib/errors'
 
 export function ProfilePage() {
-  const { usuario, refrescarSesion } = useAuth()
+  const { usuario, refrescarSesion, cerrarSesion } = useAuth()
+  const navigate = useNavigate()
   const [perfil, setPerfil] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
@@ -87,7 +89,13 @@ export function ProfilePage() {
       setContrasenaActual('')
       setContrasenaNueva('')
       setConfirmacion('')
-      setMensaje('Contraseña actualizada correctamente.')
+      try {
+        await cerrarSesion()
+      } catch {
+        // El servidor ya revocó la sesión; la sesión local se limpia igualmente.
+      }
+      window.sessionStorage.setItem('gradex-contrasena-actualizada', '1')
+      navigate('/login', { replace: true })
     } catch (fallo) {
       const campos = erroresDeCampo(fallo)
       setErrores(campos)
