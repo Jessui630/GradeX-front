@@ -99,3 +99,5 @@ El repositorio ya está vinculado a SonarQube Cloud (SonarCloud) mediante la int
 El análisis automático **no importa cobertura**. `npm run test:coverage` genera un LCOV real en `coverage/lcov.info` y el CI lo publica como artefacto. Para importarlo a SonarCloud hace falta configurar el secreto `SONAR_TOKEN` y ejecutar un scanner con `sonar.javascript.lcov.reportPaths=coverage/lcov.info`. Si se habilita el scanner, debe sustituir al análisis automático, no ejecutarse en paralelo, para no duplicar análisis. Sin ese token no se declara cobertura importada.
 
 El E2E `sprint2-sprint3.spec.js` usa `sqlcmd` contra `GradeX_IntegrationTests` para preparar roles y un especialista de prueba, y limpia solicitudes previas antes de ejecutarse. No se ejecuta en el CI hospedado porque requiere SQL Server LocalDB; se ejecuta localmente con `npm run test:e2e`.
+
+El helper E2E usa una ruta absoluta de `sqlcmd` (o `SQLCMD_PATH`) y no resuelve el ejecutable por `PATH`.

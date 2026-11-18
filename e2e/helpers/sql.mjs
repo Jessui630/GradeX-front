@@ -1,7 +1,19 @@
 import { execFileSync } from 'node:child_process'
+import { existsSync } from 'node:fs'
 
 const servidor = '(localdb)\\MSSQLLocalDB'
 const base = 'GradeX_IntegrationTests'
+const sqlcmd = [
+  process.env.SQLCMD_PATH,
+  'C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\SQLCMD.EXE',
+  'C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\SQLCMD.EXE',
+].filter(Boolean).find((ruta) => existsSync(ruta))
+
+if (!sqlcmd) {
+  throw new Error(
+    'No se encontró sqlcmd. Define SQLCMD_PATH con la ruta absoluta del ejecutable.',
+  )
+}
 
 function escapar(valor) {
   return String(valor).replaceAll("'", "''")
@@ -9,7 +21,7 @@ function escapar(valor) {
 
 export function ejecutarSql(consulta) {
   execFileSync(
-    'sqlcmd',
+    sqlcmd,
     [
       '-S', servidor,
       '-d', base,
