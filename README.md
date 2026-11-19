@@ -39,7 +39,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-`npm test` ejecuta las pruebas deterministas de validación y formato con el runner de Node. `npm run test:e2e` construye la PWA, levanta el backend de integración y Chromium real, y recorre registro, login, nueva evaluación, evidencia, envío, consulta y logout. Las capturas quedan en `test-results/`, excluido de Git.
+`npm test` ejecuta las pruebas deterministas de validación, formato y mensajes de error con el runner de Node. `npm run test:e2e` construye la PWA, levanta el backend de integración y Chromium real, y recorre registro, login, nueva evaluación, bloqueo de categoría de un borrador, reemplazo de evidencia, envío, consulta y logout. Las capturas quedan en `test-results/`, excluido de Git.
 
 ## Rutas de la aplicación
 
@@ -74,6 +74,8 @@ El workflow `.github/workflows/develop_gradex-front.yml` compila, ejecuta lint/t
 - `POST /api/sesiones`: inicia sesión y establece la cookie HttpOnly.
 - `GET /api/sesiones/actual`: consulta la sesión y los roles confirmados.
 - `DELETE /api/sesiones/actual`: invalida la sesión en el servidor.
+- `GET /api/catalogo/categorias`: categorías activas del catálogo.
+- `GET /api/catalogo/categorias/{id}/marcas`: marcas disponibles para la categoría.
 - `GET /api/catalogo/categorias/{id}/requisitos`: campos y evidencias requeridas.
 - `POST /api/solicitudes`: crea un borrador idempotente.
 - `POST /api/solicitudes/{id}/evidencias`: sube una imagen multipart.

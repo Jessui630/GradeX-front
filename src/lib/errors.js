@@ -1,4 +1,4 @@
-import { ApiError } from './api'
+import { ApiError } from './ApiError.js'
 
 const PATRONES_TECNICOS = [
   /an error occurred/i,
@@ -42,11 +42,9 @@ export function mensajeDeError(error) {
   }
 
   if (error.status === 503) {
+    const mensaje = error.message?.trim()
+    if (mensaje && !esMensajeTecnico(mensaje)) return mensaje
     return 'El servicio no está disponible en este momento. Intenta nuevamente en breve.'
-  }
-
-  if (error.status === 409) {
-    return 'El correo ya está registrado. ¿Quieres iniciar sesión?'
   }
 
   if (error.status >= 500) {
@@ -55,6 +53,9 @@ export function mensajeDeError(error) {
 
   const mensaje = error.message?.trim()
   if (!mensaje || esMensajeTecnico(mensaje)) {
+    if (error.status === 409) {
+      return 'La solicitud cambió de estado. Recarga la página e intenta de nuevo.'
+    }
     return 'No fue posible completar la operación.'
   }
 

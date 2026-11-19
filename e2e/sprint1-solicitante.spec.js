@@ -158,15 +158,39 @@ test('registro, sesión, nueva evaluación, evidencia, envío, consulta y logout
   await page.getByLabel('Número de serie', { exact: true }).fill('SERIE-UI-001')
   await page.getByLabel('Accesorios', { exact: true }).fill('Caja y cable')
   await page.getByLabel('Descripción', { exact: true }).fill('Producto sintético para la prueba E2E')
+  await page.getByLabel('Observaciones').fill('Observación persistida E2E')
   await page.getByRole('button', { name: /Continuar a evidencia/ }).click()
 
   await expect(page.getByRole('heading', { name: 'Adjunta la evidencia' })).toBeVisible()
+
+  await page.getByRole('button', { name: /Producto/ }).click()
+  await expect(page.getByRole('heading', { name: 'Datos del producto' })).toBeVisible()
+  await page.getByRole('button', { name: /Continuar a evidencia/ }).click()
+  await expect(page.getByRole('heading', { name: 'Adjunta la evidencia' })).toBeVisible()
+
+  await page.getByRole('button', { name: /Producto/ }).click()
+  await expect(page.getByRole('heading', { name: 'Datos del producto' })).toBeVisible()
+  await page.getByRole('button', { name: /Categoría/ }).click()
+  await expect(page.getByRole('heading', { name: 'Elige una categoría' })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Ropa/ })).toBeDisabled()
+  await page.getByRole('button', { name: /Sneakers/ }).click()
+  await expect(page.getByRole('heading', { name: 'Datos del producto' })).toBeVisible()
+  await page.getByRole('button', { name: /Continuar a evidencia/ }).click()
+  await expect(page.getByRole('heading', { name: 'Adjunta la evidencia' })).toBeVisible()
+
   await page.locator('input[type="file"]').first().setInputFiles({
     name: 'evidencia-ui.png',
     mimeType: 'image/png',
     buffer: png,
   })
   await expect(page.locator('.evidence-preview img').first()).toBeVisible()
+  await expect(page.getByRole('button', { name: /Reemplazar imagen/ })).toBeVisible()
+  await page.locator('input[type="file"]').first().setInputFiles({
+    name: 'evidencia-ui-reemplazo.png',
+    mimeType: 'image/png',
+    buffer: png,
+  })
+  await expect(page.locator('.evidence-preview img')).toHaveCount(1)
   await page.screenshot({ path: test.info().outputPath('04-evidencia.png'), fullPage: true })
 
   await page.getByRole('button', { name: /Revisar solicitud/ }).click()
@@ -184,6 +208,7 @@ test('registro, sesión, nueva evaluación, evidencia, envío, consulta y logout
   await expect(page).toHaveURL(/\/app\/solicitudes\/\d+$/)
   await expect(page.getByRole('heading', { name: 'Producto UI Sprint 1' })).toBeVisible()
   await expect(page.getByText('Pendiente de asignación').first()).toBeVisible()
+  await expect(page.getByText('Observación persistida E2E')).toBeVisible()
   await expect(page.locator('.evidence-detail img').first()).toBeVisible()
   await page.screenshot({ path: test.info().outputPath('06-detalle.png'), fullPage: true })
 

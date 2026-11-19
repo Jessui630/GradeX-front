@@ -34,7 +34,7 @@ function claveIdempotencia() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
-function validarProducto(formulario, requisitos) {
+function validarProducto(formulario, requisitos, marcas) {
   const errores = {}
   for (const definicion of CAMPOS) {
     const requisito = requisitos?.campos?.find((item) => item.campo === definicion.campo)
@@ -47,6 +47,16 @@ function validarProducto(formulario, requisitos) {
       errores[definicion.clave] = `${definicion.etiqueta} admite hasta ${max} caracteres.`
     }
   }
+
+  const marcaObligatoria = requisitos?.campos?.some(
+    (item) => item.campo === 'MARCA' && item.obligatorio,
+  )
+  if (marcaObligatoria && !formulario.idMarca) {
+    errores.idMarca = marcas.length === 0
+      ? 'La categoría exige marca, pero no tiene marcas disponibles. Contacta al administrador.'
+      : 'Selecciona una marca.'
+  }
+
   if ((formulario.observaciones ?? '').trim().length > 1000) {
     errores.observaciones = 'Las observaciones admiten hasta 1000 caracteres.'
   }
@@ -164,6 +174,15 @@ export function NewEvaluationPage() {
   }
 
   async function seleccionarCategoria(idCategoria) {
+    if (draft && idCategoria !== categoriaId) {
+      const actual = categorias.find((categoria) => categoria.idCategoria === categoriaId)
+      setErrorGeneral(
+        `Este borrador pertenece a ${actual?.nombre ?? 'otra categoría'}. ` +
+        'Para cambiar de categoría, inicia una nueva evaluación.',
+      )
+      return
+    }
+
     setCategoriaId(idCategoria)
     setRequisitos(null)
     setMarcas([])
@@ -178,15 +197,15 @@ export function NewEvaluationPage() {
   }
 
   async function continuarProducto() {
-    const validacion = validarProducto(formulario, requisitos)
-    setErrores(validacion)
-    setErrorGeneral('')
-    if (Object.keys(validacion).length > 0) return
-
     if (draft) {
       setPaso(3)
       return
     }
+
+    const validacion = validarProducto(formulario, requisitos, marcas)
+    setErrores(validacion)
+    setErrorGeneral('')
+    if (Object.keys(validacion).length > 0) return
 
     setGuardando(true)
     try {
@@ -210,7 +229,35 @@ export function NewEvaluationPage() {
     } catch (error) {
       const campos = erroresDeCampo(error)
       setErrores(campos)
-      if (Object.keys(campos).length === 0) setErrorGeneral(mensajeDeError(error))
+      if (Object.keys(campos).length === 0 || campos.idCategoria) {
+        setErrorGeneral(campos.idCategoria || mensajeDeError(error))
+      }
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  async function recargarCategorias() {
+    setErrorGeneral('')
+    setCargando(true)
+    try {
+      setCategorias(await listarCategorias())
+    } catch (error) {
+      setErrorGeneral(mensajeDeError(error))
+    } finally {
+      setCargando(false)
+    }
+  }
+
+  async function reintentarRequisitos() {
+    if (!categoriaId) return
+    setErrorGeneral('')
+    setRequisitos(null)
+    setGuardando(true)
+    try {
+      await cargarCategoria(categoriaId)
+    } catch (error) {
+      setErrorGeneral(mensajeDeError(error))
     } finally {
       setGuardando(false)
     }
@@ -237,7 +284,20 @@ export function NewEvaluationPage() {
         archivo,
         descripciones[tipo.idTipoEvidencia],
       )
-      setEvidencias((actual) => [...actual, evidencia])
+      setEvidencias((actual) => {
+        const otros = actual.filter(
+          (item) => item.idTipoEvidencia !== tipo.idTipoEvidencia,
+        )
+        const mismoTipo = actual.filter(
+          (item) => item.idTipoEvidencia === tipo.idTipoEvidencia,
+        )
+        const maximo = Math.max(1, tipo.cantidadMaxima)
+        return [...otros, ...mismoTipo.slice(-(maximo - 1)), evidencia]
+      })
+      setDescripciones((actual) => ({
+        ...actual,
+        [tipo.idTipoEvidencia]: '',
+      }))
     } catch (error) {
       setErrorGeneral(mensajeDeError(error))
     } finally {
@@ -255,9 +315,8 @@ export function NewEvaluationPage() {
       setResultado(enviada)
       setPaso(5)
     } catch (error) {
-      const campos = erroresDeCampo(error)
-      setErrores(campos)
-      if (Object.keys(campos).length === 0) setErrorGeneral(mensajeDeError(error))
+      setErrores(erroresDeCampo(error))
+      setErrorGeneral(mensajeDeError(error))
     } finally {
       setGuardando(false)
     }
@@ -268,6 +327,7 @@ export function NewEvaluationPage() {
     const maximo = Math.max(1, tipo.cantidadMaxima)
     const minimo = tipo.cantidadMinima
     const alcanzado = lista.length >= maximo
+    const puedeReemplazar = alcanzado && maximo === 1
     return (
       <article className="evidence-requirement" key={tipo.idTipoEvidencia}>
         <div className="evidence-requirement-head">
@@ -293,7 +353,7 @@ export function NewEvaluationPage() {
             ))}
           </div>
         ) : null}
-        {!alcanzado ? (
+        {!alcanzado || puedeReemplazar ? (
           <div className="upload-control">
             <input
               accept="image/jpeg,image/png,image/webp"
@@ -315,7 +375,7 @@ export function NewEvaluationPage() {
               {subiendo === tipo.idTipoEvidencia ? (
                 <><span className="spinner spinner-small" /> Subiendo…</>
               ) : (
-                <><Icon name="certificate" size={17} /> Añadir imagen</>
+                <><Icon name="certificate" size={17} /> {lista.length > 0 ? 'Reemplazar imagen' : 'Añadir imagen'}</>
               )}
             </button>
             <input
@@ -418,16 +478,37 @@ export function NewEvaluationPage() {
           <p className="panel-note">
             Los campos y la evidencia dependen de la categoría.
           </p>
+          {draft ? (
+            <p className="alert alert-success">
+              <Icon name="check" size={18} />
+              Este borrador está asociado a{' '}
+              {categorias.find((categoria) => categoria.idCategoria === categoriaId)?.nombre
+                ?? 'su categoría'}. Para cambiar de categoría, inicia una nueva evaluación.
+            </p>
+          ) : null}
           {categorias.length === 0 ? (
             <div className="empty-state compact">
-              <h2>No hay categorías disponibles</h2>
-              <p>Intenta de nuevo más tarde.</p>
+              <h2>{errorGeneral ? 'No pudimos cargar las categorías' : 'No hay categorías disponibles'}</h2>
+              <p>
+                {errorGeneral
+                  ? 'Revisa la conexión e inténtalo de nuevo.'
+                  : 'El catálogo aún no está configurado. Contacta al administrador.'}
+              </p>
+              <button
+                className="button button-secondary"
+                disabled={cargando}
+                onClick={recargarCategorias}
+                type="button"
+              >
+                Reintentar
+              </button>
             </div>
           ) : (
             <div className="category-grid">
               {categorias.map((categoria) => (
                 <button
                   className={`category-option${categoriaId === categoria.idCategoria ? ' is-selected' : ''}`}
+                  disabled={Boolean(draft) && categoria.idCategoria !== categoriaId}
                   key={categoria.idCategoria}
                   onClick={() => seleccionarCategoria(categoria.idCategoria)}
                   type="button"
@@ -512,6 +593,7 @@ export function NewEvaluationPage() {
             <div className="field">
               <label htmlFor="idMarca">Marca {camposRequeridos.has('MARCA') ? '*' : ''}</label>
               <select
+                aria-invalid={Boolean(errores.idMarca)}
                 aria-required={camposRequeridos.has('MARCA')}
                 disabled={Boolean(draft) || marcas.length === 0}
                 id="idMarca"
@@ -523,7 +605,9 @@ export function NewEvaluationPage() {
                   <option key={marca.idMarca} value={marca.idMarca}>{marca.nombre}</option>
                 ))}
               </select>
-              {marcas.length === 0 ? (
+              {errores.idMarca ? (
+                <p className="field-error" role="alert">{errores.idMarca}</p>
+              ) : marcas.length === 0 ? (
                 <p className="field-hint">No hay marcas disponibles para esta categoría.</p>
               ) : null}
             </div>
@@ -564,7 +648,9 @@ export function NewEvaluationPage() {
               <p className="card-kicker">Paso 3</p>
               <h2>Adjunta la evidencia</h2>
             </div>
-            {evidenciaRequeridaCompleta ? (
+            {requisitos === null ? (
+              <span className="badge badge-warn"><Icon name="alert" size={14} /> Requisitos sin cargar</span>
+            ) : evidenciaRequeridaCompleta ? (
               <span className="badge badge-success"><Icon name="check" size={14} /> Completa</span>
             ) : (
               <span className="badge badge-warn"><Icon name="alert" size={14} /> Faltan imágenes</span>
@@ -574,7 +660,22 @@ export function NewEvaluationPage() {
             Tus imágenes son privadas y solo tú puedes verlas.
           </p>
 
-          {requisitos?.evidencias?.length ? (
+          {requisitos === null ? (
+            <div className="alert alert-error" role="alert">
+              <Icon name="alert" size={18} />
+              <span>
+                No pudimos cargar los requisitos de esta categoría.
+                <button
+                  className="button button-secondary"
+                  disabled={guardando}
+                  onClick={reintentarRequisitos}
+                  type="button"
+                >
+                  Reintentar
+                </button>
+              </span>
+            </div>
+          ) : requisitos.evidencias.length ? (
             <div className="evidence-requirements">
               {evidenciasRequeridas.map(renderEvidencia)}
               {evidenciasOpcionales.length > 0 ? (
@@ -597,12 +698,12 @@ export function NewEvaluationPage() {
           )}
 
           <div className="form-actions">
-            <button className="button button-secondary" disabled={Boolean(draft)} onClick={() => setPaso(2)} type="button">
+            <button className="button button-secondary" onClick={() => setPaso(2)} type="button">
               <Icon name="arrow-left" size={17} /> Producto
             </button>
             <button
               className="button button-primary"
-              disabled={!evidenciaRequeridaCompleta || Boolean(subiendo)}
+              disabled={requisitos === null || !evidenciaRequeridaCompleta || Boolean(subiendo)}
               onClick={() => setPaso(4)}
               type="button"
             >
