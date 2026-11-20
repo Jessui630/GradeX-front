@@ -1,15 +1,7 @@
 import { env } from '../config/env'
+import { ApiError } from './ApiError.js'
 
-export class ApiError extends Error {
-  constructor(message, { status = 0, errors, retryAfter, problem } = {}) {
-    super(message)
-    this.name = 'ApiError'
-    this.status = status
-    this.errors = errors
-    this.retryAfter = retryAfter
-    this.problem = problem
-  }
-}
+export { ApiError }
 
 async function leerRespuesta(response) {
   if (response.status === 204) return null
