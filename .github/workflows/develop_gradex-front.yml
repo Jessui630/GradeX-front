@@ -80,7 +80,7 @@ jobs:
 
       - name: Determine production artifact eligibility
         id: production
-        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.confirm == 'DEPLOY'))
+        if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.confirm == 'DEPLOY'
         run: echo "enabled=true" >> "$GITHUB_OUTPUT"
 
       - name: Prepare Node 24 deployment package
@@ -121,7 +121,7 @@ jobs:
   deploy:
     name: Deploy to production
     needs: build
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.confirm == 'DEPLOY'))
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.confirm == 'DEPLOY'
     runs-on: ubuntu-latest
     environment: production
     permissions:
