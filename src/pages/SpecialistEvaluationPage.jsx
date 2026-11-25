@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { CertificateQr } from '../components/CertificateQr'
 import { EvidencePreview } from '../components/EvidencePreview'
 import { Icon } from '../components/Icon'
 import { ErrorState, InlineError, PageLoader } from '../components/PageState'
 import { StatusBadge } from '../components/StatusBadge'
+import { obtenerRequisitos } from '../features/catalog/catalog.api'
+import {
+  etiquetaDictamen,
+  tonoDictamen,
+} from '../features/certificados/certificadoFormato'
 import {
   emitirCertificado,
   finalizarEvaluacion,
@@ -78,6 +84,8 @@ export function SpecialistEvaluationPage() {
   const [observacionesGenerales, setObservacionesGenerales] = useState('')
   const [resultados, setResultados] = useState({})
   const [descripcionEvidencia, setDescripcionEvidencia] = useState('')
+  const [idTipoEvidenciaSolicitada, setIdTipoEvidenciaSolicitada] = useState('')
+  const [tiposEvidencia, setTiposEvidencia] = useState([])
   const [certificado, setCertificado] = useState(null)
 
   useEffect(() => {
@@ -118,6 +126,21 @@ export function SpecialistEvaluationPage() {
       activo = false
     }
   }, [idSolicitud, intento])
+
+  useEffect(() => {
+    let activo = true
+    if (!detalle?.idCategoria) return undefined
+    obtenerRequisitos(detalle.idCategoria)
+      .then((data) => {
+        if (activo) setTiposEvidencia(data.evidencias ?? [])
+      })
+      .catch(() => {
+        if (activo) setTiposEvidencia([])
+      })
+    return () => {
+      activo = false
+    }
+  }, [detalle?.idCategoria])
 
   if (!Number.isInteger(idSolicitud) || idSolicitud <= 0) {
     return (
@@ -192,6 +215,10 @@ export function SpecialistEvaluationPage() {
       setError('Selecciona un dictamen antes de finalizar la evaluación.')
       return
     }
+    if (conditionGrade === '') {
+      setError('Registra la calificación de condición antes de finalizar.')
+      return
+    }
     setGuardando(true)
     setError('')
     setMensaje('')
@@ -221,9 +248,13 @@ export function SpecialistEvaluationPage() {
     setMensaje('')
     try {
       await solicitarEvidencia(idSolicitud, {
+        idTipoEvidencia: idTipoEvidenciaSolicitada
+          ? Number(idTipoEvidenciaSolicitada)
+          : null,
         descripcion: descripcionEvidencia.trim(),
       })
       setDescripcionEvidencia('')
+      setIdTipoEvidenciaSolicitada('')
       setMensaje('Solicitud de evidencia registrada. El solicitante recibió el aviso.')
       setIntento((actual) => actual + 1)
     } catch (fallo) {
@@ -283,10 +314,17 @@ export function SpecialistEvaluationPage() {
             </div>
             <span className="badge badge-success">{certificado.estadoNombre}</span>
           </div>
+          <div className={`certificate-result certificate-result-${tonoDictamen(
+            certificado.dictamen ?? evaluacion?.dictamen,
+          )}`}>
+            <span>Resultado registrado</span>
+            <strong>{etiquetaDictamen(certificado.dictamen ?? evaluacion?.dictamen)}</strong>
+          </div>
           <p className="panel-note">
             Emitido {formatearFecha(certificado.fechaEmision)}. Comparte el enlace de
             verificación pública; no expone datos personales del solicitante.
           </p>
+          <CertificateQr token={certificado.qrToken} />
           <Link className="button button-secondary" to={`/verificar/${certificado.qrToken}`}>
             <Icon name="external-link" size={16} /> Ver enlace público
           </Link>
@@ -419,7 +457,7 @@ export function SpecialistEvaluationPage() {
 
         <div className="form-grid evaluation-general">
           <div className="field">
-            <label htmlFor="conditionGrade">Condition Grade (0-10)</label>
+            <label htmlFor="conditionGrade">Condition Grade (0-10) *</label>
             <input
               disabled={soloLectura}
               id="conditionGrade"
@@ -499,6 +537,21 @@ export function SpecialistEvaluationPage() {
               <p className="card-kicker">Evidencia adicional</p>
               <h2>Solicitar al solicitante</h2>
             </div>
+          </div>
+          <div className="field field-wide">
+            <label htmlFor="tipoEvidenciaSolicitada">Tipo de evidencia (opcional)</label>
+            <select
+              id="tipoEvidenciaSolicitada"
+              onChange={(evento) => setIdTipoEvidenciaSolicitada(evento.target.value)}
+              value={idTipoEvidenciaSolicitada}
+            >
+              <option value="">Cualquiera de la categoría</option>
+              {tiposEvidencia.map((tipo) => (
+                <option key={tipo.idTipoEvidencia} value={tipo.idTipoEvidencia}>
+                  {tipo.nombre}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="field field-wide">
             <label htmlFor="descripcionEvidencia">¿Qué evidencia necesitas?</label>

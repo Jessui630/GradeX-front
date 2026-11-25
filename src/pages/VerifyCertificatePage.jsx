@@ -7,17 +7,16 @@ import {
   verificarCertificado,
   verificarCertificadoPorNumero,
 } from '../features/certificados/certificados.api'
+import {
+  etiquetaDictamen,
+  formatearCalificacion,
+  tonoDictamen,
+} from '../features/certificados/certificadoFormato'
 import { formatearFecha } from '../features/solicitudes/solicitudFormato'
 import { mensajeDeError } from '../lib/errors'
 
 const FORMATO_GUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-
-const DICTAMENES = {
-  AUTENTICO: 'Auténtico',
-  NO_AUTENTICO: 'No auténtico',
-  INCONCLUSO: 'Inconcluso',
-}
 
 export function VerifyCertificatePage() {
   const { token } = useParams()
@@ -113,29 +112,40 @@ export function VerifyCertificatePage() {
                 </div>
                 <span className="badge badge-success">{resultado.estadoNombre}</span>
               </div>
+              <div className={`certificate-result certificate-result-${tonoDictamen(resultado.dictamen)}`}>
+                <span>Resultado de la evaluación</span>
+                <strong>{etiquetaDictamen(resultado.dictamen)}</strong>
+              </div>
               <dl className="review-grid">
                 <div className="review-wide">
                   <dt>Producto</dt>
                   <dd>{resultado.nombreProducto}</dd>
                 </div>
+                <div><dt>Modelo</dt><dd>{resultado.modelo ?? 'No indicado'}</dd></div>
                 <div><dt>Categoría</dt><dd>{resultado.categoria}</dd></div>
                 <div><dt>Marca</dt><dd>{resultado.marca ?? 'Sin marca'}</dd></div>
-                <div>
-                  <dt>Dictamen</dt>
-                  <dd>{DICTAMENES[resultado.dictamen] ?? resultado.dictamen ?? 'No disponible'}</dd>
-                </div>
+                <div><dt>Condición</dt><dd>{formatearCalificacion(resultado.conditionGrade)}</dd></div>
                 <div><dt>Emisión</dt><dd>{formatearFecha(resultado.fechaEmision)}</dd></div>
                 <div>
-                  <dt>Vencimiento</dt>
-                  <dd>{resultado.fechaVencimiento
-                    ? formatearFecha(resultado.fechaVencimiento)
-                    : 'Sin vencimiento'}</dd>
+                  <dt>Vigencia</dt>
+                  <dd>{resultado.estadoNombre}
+                    {resultado.fechaVencimiento
+                      ? ` · vence ${formatearFecha(resultado.fechaVencimiento)}`
+                      : ' · sin vencimiento registrado'}</dd>
                 </div>
                 <div className="review-wide">
                   <dt>Especialista</dt>
                   <dd>{resultado.especialista ?? 'No disponible'}</dd>
                 </div>
+                <div className="review-wide">
+                  <dt>Especialidad</dt>
+                  <dd>{resultado.especialidad ?? 'No disponible'}</dd>
+                </div>
               </dl>
+              <p className="panel-note">
+                Este certificado documenta el resultado emitido por el especialista.
+                Un dictamen No auténtico o Inconcluso no acredita la autenticidad del producto.
+              </p>
             </article>
           ) : null}
 

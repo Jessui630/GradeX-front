@@ -23,6 +23,7 @@ export function AppShell() {
       icon: 'spark',
     })
     enlaces.push({ to: '/app/solicitudes', label: 'Mis solicitudes', icon: 'clipboard' })
+    enlaces.push({ to: '/app/certificados', label: 'Mis certificados', icon: 'certificate' })
   }
   if (tieneRol(usuario, ROLE.ESPECIALISTA)) {
     enlaces.push({ to: '/app/especialista', label: 'Asignaciones', icon: 'clipboard' })

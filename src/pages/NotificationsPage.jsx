@@ -65,13 +65,19 @@ export function NotificationsPage() {
     }
   }
 
-  function enlaceSolicitud(idSolicitud) {
-    if (!idSolicitud) return null
-    if (tieneRol(usuario, ROLE.ESPECIALISTA)) {
-      return `/app/especialista/asignaciones/${idSolicitud}`
+  function enlaceSolicitud(notificacion) {
+    if (!notificacion.idSolicitud) return null
+    const esAvisoDeAsignacion =
+      notificacion.titulo === 'Nueva solicitud asignada' ||
+      notificacion.tipoCodigo === 'EVIDENCIA_RECIBIDA'
+    if (esAvisoDeAsignacion && tieneRol(usuario, ROLE.ESPECIALISTA)) {
+      return `/app/especialista/asignaciones/${notificacion.idSolicitud}`
     }
     if (tieneRol(usuario, ROLE.SOLICITANTE)) {
-      return `/app/solicitudes/${idSolicitud}`
+      return `/app/solicitudes/${notificacion.idSolicitud}`
+    }
+    if (tieneRol(usuario, ROLE.ESPECIALISTA)) {
+      return `/app/especialista/asignaciones/${notificacion.idSolicitud}`
     }
     return null
   }
@@ -138,7 +144,7 @@ export function NotificationsPage() {
         <>
           <ul className="notification-list">
             {datos.elementos.map((notificacion) => {
-              const enlace = enlaceSolicitud(notificacion.idSolicitud)
+              const enlace = enlaceSolicitud(notificacion)
               return (
                 <li
                   className={`notification-item${notificacion.leida ? '' : ' is-unread'}`}

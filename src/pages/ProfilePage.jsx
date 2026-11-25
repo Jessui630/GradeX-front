@@ -169,6 +169,10 @@ export function ProfilePage() {
               />
               Recibir notificaciones en la aplicación
             </label>
+            <p className="field-hint">
+              Si las desactivas, dejarás de ver avisos en Notificaciones; los cambios del
+              proceso seguirán visibles en el detalle de cada solicitud.
+            </p>
             <div className="form-actions">
               <button className="button button-primary" disabled={guardando} type="submit">
                 <Icon name="save" size={16} /> Guardar cambios

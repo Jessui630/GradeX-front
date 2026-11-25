@@ -1,5 +1,9 @@
 import { apiFetch } from '../../lib/api'
 
+export function listarCertificados() {
+  return apiFetch('/certificados')
+}
+
 export function obtenerCertificadoSolicitud(idSolicitud) {
   return apiFetch(`/certificados/solicitud/${idSolicitud}`)
 }

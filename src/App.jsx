@@ -7,6 +7,7 @@ import { AccessDeniedPage } from './pages/AccessDeniedPage'
 import { AdminDashboardPage } from './pages/AdminDashboardPage'
 import { LandingPage } from './pages/LandingPage'
 import { LoginPage } from './pages/LoginPage'
+import { MyCertificatesPage } from './pages/MyCertificatesPage'
 import { MyRequestsPage } from './pages/MyRequestsPage'
 import { NewEvaluationPage } from './pages/NewEvaluationPage'
 import { NotFoundPage } from './pages/NotFoundPage'
@@ -60,6 +61,14 @@ function App() {
             </RoleRoute>
           }
           path="solicitudes/:id"
+        />
+        <Route
+          element={
+            <RoleRoute role={ROLE.SOLICITANTE}>
+              <MyCertificatesPage />
+            </RoleRoute>
+          }
+          path="certificados"
         />
         <Route element={<NotificationsPage />} path="notificaciones" />
         <Route element={<ProfilePage />} path="perfil" />
