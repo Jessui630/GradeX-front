@@ -73,7 +73,16 @@ $env:PORT = '8080'
 node server.mjs
 ```
 
-El workflow `.github/workflows/develop_gradex-front.yml` compila, ejecuta lint/tests, empaqueta `dist`, `server.mjs` y `deploy/package.json`, despliega el ZIP en `gradex-front` y configura el inicio con `node server.mjs`. No se debe usar `vite preview` como servidor definitivo.
+El workflow `.github/workflows/develop_gradex-front.yml` ejecuta lint, pruebas con cobertura, auditoría de dependencias, build y verificación del React real en `push` y `pull_request` de `main`, `develop`, `release` y `feature/**`. La publicación a producción solo se habilita desde `main`: en un `push` a `main` o en una ejecución manual desde `main` con la confirmación `DEPLOY`, después de que `Build and verify` termine correctamente y con la aprobación del environment `production`. En `develop`, `release` y ramas feature solo se ejecuta CI; una ejecución manual con `DEPLOY` fuera de `main` falla explícitamente. El job de despliegue vuelve a comprobar la referencia y que el commit pertenezca a `main`. Empaca `dist`, `server.mjs` y `deploy/package.json`, despliega el ZIP en `gradex-front` y configura el inicio con `node server.mjs`. No se debe usar `vite preview` como servidor definitivo.
+
+## Política de ramas y publicación
+
+- `develop`: integración y pruebas. Nunca despliega.
+- `release`: preparación y validación de la versión. Nunca despliega.
+- `main`: única rama autorizada para publicar en producción. El despliegue requiere que `Build and verify` haya pasado y, en ejecuciones manuales, la confirmación `DEPLOY`.
+- `feature/**`: CI aislado. Nunca despliega.
+
+El environment `production` debe configurarse con política de rama `main`, revisores obligatorios y, si el repositorio lo permite, impedir la autoaprobación. El workflow ya referencia ese environment; sin las reglas configuradas, la aprobación humana no se aplica. Al pasar a un environment, la credencial federada de Azure debe usar el sujeto `repo:Jessui630/GradeX-front:environment:production`; si la app registration solo tiene un sujeto de rama, `azure/login` fallará hasta que un administrador lo actualice. `.github/workflows/build.yml` es un flujo heredado de la rama `Sprint1`: solo ejecuta lint, pruebas, auditoría y build, no despliega.
 
 ## Integración con el API
 
