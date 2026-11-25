@@ -13,6 +13,15 @@ on:
       - develop
       - release
   workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Escribe DEPLOY para autorizar la publicación manual desde main'
+        required: true
+        type: choice
+        options:
+          - 'no'
+          - 'DEPLOY'
+        default: 'no'
 
 permissions:
   contents: read
@@ -27,6 +36,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Reject unauthorized manual publication
+        if: github.event_name == 'workflow_dispatch' && inputs.confirm == 'DEPLOY' && github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::La publicación manual solo se autoriza desde main. Referencia recibida: $GITHUB_REF."
+          exit 1
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -65,7 +80,7 @@ jobs:
 
       - name: Determine production artifact eligibility
         id: production
-        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.confirm == 'DEPLOY'
         run: echo "enabled=true" >> "$GITHUB_OUTPUT"
 
       - name: Prepare Node 24 deployment package
@@ -106,8 +121,9 @@ jobs:
   deploy:
     name: Deploy to production
     needs: build
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.confirm == 'DEPLOY'
     runs-on: ubuntu-latest
+    environment: production
     permissions:
       contents: read
       id-token: write
@@ -116,6 +132,15 @@ jobs:
       cancel-in-progress: false
 
     steps:
+      - name: Checkout repository for branch verification
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Assert main-only publication
+        run: bash scripts/assert-main-publication.sh
+
       - name: Download artifact from this workflow run
         uses: actions/download-artifact@v4
         with:
