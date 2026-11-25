@@ -82,7 +82,18 @@ El workflow `.github/workflows/develop_gradex-front.yml` ejecuta lint, pruebas c
 - `main`: única rama autorizada para publicar en producción. El despliegue requiere que `Build and verify` haya pasado y, en ejecuciones manuales, la confirmación `DEPLOY`.
 - `feature/**`: CI aislado. Nunca despliega.
 
-El environment `production` debe configurarse con política de rama `main`, revisores obligatorios y, si el repositorio lo permite, impedir la autoaprobación. El workflow ya referencia ese environment; sin las reglas configuradas, la aprobación humana no se aplica. Al pasar a un environment, la credencial federada de Azure debe usar el sujeto `repo:Jessui630/GradeX-front:environment:production`; si la app registration solo tiene un sujeto de rama, `azure/login` fallará hasta que un administrador lo actualice. `.github/workflows/build.yml` es un flujo heredado de la rama `Sprint1`: solo ejecuta lint, pruebas, auditoría y build, no despliega.
+El environment `production` debe configurarse con política de rama `main`, revisores obligatorios y, si el repositorio lo permite, impedir la autoaprobación. El workflow ya referencia ese environment; sin las reglas configuradas, la aprobación humana no se aplica. Al pasar a un environment, la credencial federada de Azure debe usar el sujeto `repo:Jessui630/GradeX-front:environment:production`; si la app registration solo tiene un sujeto de rama, `azure/login` fallará hasta que un administrador lo actualice. El job de despliegue solo acepta `push` o `workflow_dispatch`; un `workflow_run` u otro evento no cumple la condición y no despliega. `.github/workflows/build.yml` es un flujo heredado de la rama `Sprint1`: solo ejecuta lint, pruebas, auditoría y build, no despliega.
+
+Opciones de protección disponibles en un repositorio público como este:
+
+- **Deployment branch policy**: permitir únicamente `main`.
+- **Required reviewers**: hasta seis personas o equipos; la aprobación se solicita antes del job `deploy`.
+- **Prevent self-review**: impedir que quien solicita la ejecución apruebe su propio despliegue, si la organización lo permite.
+- **Wait timer**: retraso opcional antes de la aprobación.
+- **Admin bypass**: deshabilitarlo cuando la política del repositorio lo permita.
+- **Branch protection/ruleset de `main`**: PR obligatorio, revisiones y status checks de `Build and verify`/SonarCloud antes de fusionar.
+
+La configuración actual del environment y de las ramas debe revisarse en GitHub; este repositorio no la modifica automáticamente.
 
 ## Integración con el API
 
