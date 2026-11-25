@@ -42,6 +42,13 @@ export function AuthProvider({ children }) {
 
   const registrar = useCallback((datos) => registrarCuenta(datos), [])
 
+  const refrescarSesion = useCallback(async () => {
+    const sesion = await obtenerSesionActual()
+    setUsuario(sesion)
+    setErrorSesion(null)
+    return sesion
+  }, [])
+
   const cerrarSesion = useCallback(async () => {
     try {
       await cerrarSesionApi()
@@ -58,8 +65,9 @@ export function AuthProvider({ children }) {
       iniciarSesion,
       registrar,
       cerrarSesion,
+      refrescarSesion,
     }),
-    [usuario, cargando, errorSesion, iniciarSesion, registrar, cerrarSesion],
+    [usuario, cargando, errorSesion, iniciarSesion, registrar, cerrarSesion, refrescarSesion],
   )
 
   return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>

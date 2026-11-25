@@ -10,6 +10,8 @@ import { listarSolicitudes } from '../features/solicitudes/solicitudes.api'
 export function WorkspaceHome() {
   const { usuario } = useAuth()
   const esSolicitante = tieneRol(usuario, ROLE.SOLICITANTE)
+  const esEspecialista = tieneRol(usuario, ROLE.ESPECIALISTA)
+  const esAdministrador = tieneRol(usuario, ROLE.ADMINISTRADOR)
   const [recientes, setRecientes] = useState(null)
   const [cargandoSolicitudes, setCargandoSolicitudes] = useState(esSolicitante)
   const [errorSolicitudes, setErrorSolicitudes] = useState(false)
@@ -77,6 +79,16 @@ export function WorkspaceHome() {
               </span>
               <Icon name="arrow-right" size={18} />
             </Link>
+            <Link className="quick-action" to="/app/certificados">
+              <span className="quick-action-icon">
+                <Icon name="certificate" size={23} />
+              </span>
+              <span>
+                <strong>Mis certificados</strong>
+                <small>Consulta y comparte los resultados emitidos.</small>
+              </span>
+              <Icon name="arrow-right" size={18} />
+            </Link>
           </section>
 
           <section aria-labelledby="recientes-titulo" className="section-block">
@@ -114,12 +126,52 @@ export function WorkspaceHome() {
           </section>
         </>
       ) : (
-        <EmptyState
-          compact
-          description="No hay módulos disponibles para tu rol por ahora."
-          icon="lock"
-          title="Tu cuenta está lista"
-        />
+        <>
+          <section className="quick-actions" aria-label="Acciones principales">
+            {esEspecialista ? (
+              <Link className="quick-action quick-action-primary" to="/app/especialista">
+                <span className="quick-action-icon">
+                  <Icon name="clipboard" size={23} />
+                </span>
+                <span>
+                  <strong>Mis asignaciones</strong>
+                  <small>Revisa las evaluaciones que tienes en curso.</small>
+                </span>
+                <Icon name="arrow-right" size={18} />
+              </Link>
+            ) : null}
+            {esAdministrador ? (
+              <Link className="quick-action quick-action-primary" to="/app/administracion">
+                <span className="quick-action-icon">
+                  <Icon name="settings" size={23} />
+                </span>
+                <span>
+                  <strong>Panel administrativo</strong>
+                  <small>Gestiona asignaciones, especialistas y catálogo.</small>
+                </span>
+                <Icon name="arrow-right" size={18} />
+              </Link>
+            ) : null}
+            <Link className="quick-action" to="/app/notificaciones">
+              <span className="quick-action-icon">
+                <Icon name="bell" size={23} />
+              </span>
+              <span>
+                <strong>Notificaciones</strong>
+                <small>Consulta los cambios de tus procesos.</small>
+              </span>
+              <Icon name="arrow-right" size={18} />
+            </Link>
+          </section>
+          {!esEspecialista && !esAdministrador ? (
+            <EmptyState
+              compact
+              description="No hay módulos disponibles para tu rol por ahora."
+              icon="lock"
+              title="Tu cuenta está lista"
+            />
+          ) : null}
+        </>
       )}
     </div>
   )

@@ -25,6 +25,14 @@ const paths = {
   info: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z M12 11v5 M12 8h.01',
   'arrow-left': 'M19 12H5 M11 6l-6 6 6 6',
   'chevron-down': 'M6 9l6 6 6-6',
+  bell: 'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9 M10 21h4',
+  plus: 'M12 5v14 M5 12h14',
+  edit: 'M12 20h9 M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z',
+  trash: 'M3 6h18 M8 6V4h8v2 M6 6l1 15h10l1-15 M10 11v6 M14 11v6',
+  download: 'M12 3v12 M7 10l5 5 5-5 M5 21h14',
+  'external-link': 'M14 3h7v7 M10 14 21 3 M21 14v7H3V3h7',
+  save: 'M5 3h14v18H5z M8 3v6h8V3 M8 21v-7h8v7',
+  send: 'M22 2 11 13 M22 2l-7 20-4-9-9-4 20-7Z',
 }
 
 export function Icon({ name, size = 20, className = '' }) {

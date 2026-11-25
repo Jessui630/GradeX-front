@@ -36,10 +36,13 @@ npm test
 npm run build
 npm run preview
 npx playwright install chromium
+npm run test:coverage
 npm run test:e2e
 ```
 
-`npm test` ejecuta las pruebas deterministas de validación, formato y mensajes de error con el runner de Node. `npm run test:e2e` construye la PWA, levanta el backend de integración y Chromium real, y recorre registro, login, nueva evaluación, bloqueo de categoría de un borrador, reemplazo de evidencia, envío, consulta y logout. Las capturas quedan en `test-results/`, excluido de Git.
+`npm run test:coverage` ejecuta las pruebas con `c8` y genera `coverage/lcov.info` y el resumen en texto. El umbral no está fijado: el porcentaje real se consulta en el artefacto, no se declara manualmente. El CI publica `coverage/` como artefacto.
+
+`npm test` ejecuta las pruebas deterministas de validación, formato, dictamen de certificado y mensajes de error con el runner de Node. `npm run test:e2e` construye la PWA, levanta el backend de integración y Chromium real, y recorre registro, login, nueva evaluación, bloqueo de categoría de un borrador, reemplazo de evidencia, asignación administrativa, evaluación, evidencia adicional, dictamen, certificado con QR, verificación pública, Mis certificados, perfil y cambio de contraseña. Las capturas quedan en `test-results/`, excluido de Git. El backend se busca en `../GradeX-back` o en la ruta indicada por `GRADEX_BACK_DIR`. El E2E local desactiva Pwned Passwords y eleva los límites de rate limiting solo en el proceso de prueba para que el recorrido sea determinista.
 
 ## Rutas de la aplicación
 
@@ -48,9 +51,14 @@ npm run test:e2e
 - `/app` resumen de sesión.
 - `/app/evaluaciones/nueva` flujo guiado de producto y evidencia.
 - `/app/solicitudes` listado real del propietario.
-- `/app/solicitudes/:id` detalle, seguimiento y evidencia privada.
-- `/app/perfil` datos de cuenta y estado de sesión.
-- `/app/solicitante`, `/app/especialista`, `/app/administracion` espacios por rol.
+- `/app/solicitudes/:id` detalle, seguimiento, evaluación y evidencia privada.
+- `/app/certificados` certificados emitidos, calificación, especialidad, QR y verificación.
+- `/app/notificaciones` avisos de cambios, evidencia y certificados.
+- `/app/perfil` edición de nombre, preferencias de aviso y contraseña.
+- `/app/especialista` asignaciones del especialista autenticado.
+- `/app/especialista/asignaciones/:id` evaluación por criterios, dictamen y certificado.
+- `/app/administracion` asignaciones, especialistas y catálogo.
+- `/verificar` y `/verificar/:token` verificación pública de certificados.
 - `/app/sin-permiso` y ruta 404.
 
 La navegación del solicitante se limita a Resumen, Nueva evaluación, Mis solicitudes, Perfil y Cerrar sesión. Los roles sin módulos implementados solo ven Resumen, Perfil y Cerrar sesión.
@@ -84,3 +92,13 @@ El workflow `.github/workflows/develop_gradex-front.yml` compila, ejecuta lint/t
 
 Las solicitudes usan `credentials: 'include'`. La contraseña nunca se guarda en
 `localStorage`, `sessionStorage` ni en la URL. Las imágenes se solicitan como blob autenticado y no se cachean en la PWA. Los errores del API se presentan como mensajes comprensibles sin mostrar detalles internos.
+
+## SonarQube Cloud y cobertura
+
+El repositorio ya está vinculado a SonarQube Cloud (SonarCloud) mediante la integración de GitHub. El análisis automático publica el check `SonarCloud Code Analysis` y el Quality Gate del PR; no se crea una instancia SonarQube Server ni se añaden servicios de pago.
+
+El análisis automático **no importa cobertura**. `npm run test:coverage` genera un LCOV real en `coverage/lcov.info` y el CI lo publica como artefacto. Para importarlo a SonarCloud hace falta configurar el secreto `SONAR_TOKEN` y ejecutar un scanner con `sonar.javascript.lcov.reportPaths=coverage/lcov.info`. Si se habilita el scanner, debe sustituir al análisis automático, no ejecutarse en paralelo, para no duplicar análisis. Sin ese token no se declara cobertura importada.
+
+Los E2E usan `sqlcmd` contra `GradeX_IntegrationTests` para preparar roles, especialistas, criterios y un certificado no auténtico, y limpian solicitudes previas antes de ejecutarse. `sprint1-solicitante.spec.js` cubre el flujo base; `sprint2-sprint3.spec.js` cubre asignación, evaluación, evidencia adicional, certificado con QR, Mis certificados y perfil; `certificate-results.spec.js` verifica que un certificado con dictamen `NO_AUTENTICO` no se presente como auténtico. No se ejecutan en el CI hospedado porque requieren SQL Server LocalDB; se ejecutan localmente con `npm run test:e2e`.
+
+El helper E2E usa una ruta absoluta de `sqlcmd` (o `SQLCMD_PATH`) y no resuelve el ejecutable por `PATH`.

@@ -1,8 +1,19 @@
 import { defineConfig } from '@playwright/test'
+import process from 'node:process'
 import path from 'node:path'
 import os from 'node:os'
 
 const storage = path.join(os.tmpdir(), 'gradex-playwright-evidencias')
+const backDirectory = process.env.GRADEX_BACK_DIR ??
+  path.resolve(process.cwd(), '..', 'GradeX-back')
+const backDll = path.join(
+  'src',
+  'GradeX.Api',
+  'bin',
+  'Release',
+  'net10.0',
+  'GradeX.Api.dll',
+)
 
 export default defineConfig({
   testDir: './e2e',
@@ -21,9 +32,8 @@ export default defineConfig({
   },
   webServer: [
     {
-      command:
-        'dotnet src\\GradeX.Api\\bin\\Release\\net10.0\\GradeX.Api.dll --urls http://localhost:5048',
-      cwd: '../GradeX-back',
+      command: `dotnet "${backDll}" --urls http://localhost:5048`,
+      cwd: backDirectory,
       url: 'http://localhost:5048/api/health',
       timeout: 120_000,
       reuseExistingServer: false,
@@ -32,6 +42,13 @@ export default defineConfig({
         ConnectionStrings__GradeX:
           'Server=(localdb)\\MSSQLLocalDB;Database=GradeX_IntegrationTests;Integrated Security=true;TrustServerCertificate=true',
         Almacenamiento__Evidencias__Ruta: storage,
+        RateLimiting__Registro__PermitLimit: '1000',
+        RateLimiting__Login__PermitLimit: '1000',
+        RateLimiting__Solicitudes__PermitLimit: '1000',
+        RateLimiting__Asignaciones__PermitLimit: '1000',
+        RateLimiting__Certificados__PermitLimit: '1000',
+        RateLimiting__Global__PermitLimit: '1000',
+        Contrasenas__PwnedPasswords__Habilitado: 'false',
       },
     },
     {

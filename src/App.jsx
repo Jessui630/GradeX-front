@@ -4,15 +4,20 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 import { RoleRoute } from './components/RoleRoute'
 import { ROLE } from './features/auth/roles'
 import { AccessDeniedPage } from './pages/AccessDeniedPage'
+import { AdminDashboardPage } from './pages/AdminDashboardPage'
 import { LandingPage } from './pages/LandingPage'
 import { LoginPage } from './pages/LoginPage'
+import { MyCertificatesPage } from './pages/MyCertificatesPage'
 import { MyRequestsPage } from './pages/MyRequestsPage'
 import { NewEvaluationPage } from './pages/NewEvaluationPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { NotificationsPage } from './pages/NotificationsPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { RegisterPage } from './pages/RegisterPage'
 import { RequestDetailRoute } from './pages/RequestDetailPage'
-import { AdministradorPanel, EspecialistaPanel, SolicitantePanel } from './pages/RolePanels'
+import { SpecialistAssignmentsPage } from './pages/SpecialistAssignmentsPage'
+import { SpecialistEvaluationPage } from './pages/SpecialistEvaluationPage'
+import { VerifyCertificatePage } from './pages/VerifyCertificatePage'
 import { WorkspaceHome } from './pages/WorkspaceHome'
 
 function App() {
@@ -21,6 +26,8 @@ function App() {
       <Route element={<LandingPage />} path="/" />
       <Route element={<LoginPage />} path="/login" />
       <Route element={<RegisterPage />} path="/registro" />
+      <Route element={<VerifyCertificatePage />} path="/verificar" />
+      <Route element={<VerifyCertificatePage />} path="/verificar/:token" />
 
       <Route
         element={
@@ -55,11 +62,20 @@ function App() {
           }
           path="solicitudes/:id"
         />
+        <Route
+          element={
+            <RoleRoute role={ROLE.SOLICITANTE}>
+              <MyCertificatesPage />
+            </RoleRoute>
+          }
+          path="certificados"
+        />
+        <Route element={<NotificationsPage />} path="notificaciones" />
         <Route element={<ProfilePage />} path="perfil" />
         <Route
           element={
             <RoleRoute role={ROLE.SOLICITANTE}>
-              <SolicitantePanel />
+              <WorkspaceHome />
             </RoleRoute>
           }
           path="solicitante"
@@ -67,15 +83,23 @@ function App() {
         <Route
           element={
             <RoleRoute role={ROLE.ESPECIALISTA}>
-              <EspecialistaPanel />
+              <SpecialistAssignmentsPage />
             </RoleRoute>
           }
           path="especialista"
         />
         <Route
           element={
+            <RoleRoute role={ROLE.ESPECIALISTA}>
+              <SpecialistEvaluationPage />
+            </RoleRoute>
+          }
+          path="especialista/asignaciones/:id"
+        />
+        <Route
+          element={
             <RoleRoute role={ROLE.ADMINISTRADOR}>
-              <AdministradorPanel />
+              <AdminDashboardPage />
             </RoleRoute>
           }
           path="administracion"
