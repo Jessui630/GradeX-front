@@ -3,7 +3,7 @@ import { stat } from 'node:fs/promises'
 import { createServer, request as httpRequest } from 'node:http'
 import { request as httpsRequest } from 'node:https'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'dist')
 const backendOrigin = (process.env.BACKEND_ORIGIN ??
@@ -37,11 +37,13 @@ const mime = new Map([
   ['.map', 'application/json; charset=utf-8'],
 ])
 
-const securityHeaders = {
+export const securityHeaders = {
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
   'Referrer-Policy': 'no-referrer',
   'Permissions-Policy': 'camera=(self), microphone=(), geolocation=()',
+  'X-Permitted-Cross-Domain-Policies': 'none',
+  'Strict-Transport-Security': 'max-age=31536000',
   'Content-Security-Policy':
     "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; manifest-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
 }
@@ -82,8 +84,8 @@ function proxy(request, response) {
     { method: request.method, headers, timeout: 60_000 },
     (upstreamResponse) => {
       response.writeHead(upstreamResponse.statusCode ?? 502, {
-        ...securityHeaders,
         ...upstreamResponse.headers,
+        ...securityHeaders,
       })
       upstreamResponse.pipe(response)
     },
@@ -186,20 +188,28 @@ async function serveStatic(request, response) {
   createReadStream(file).pipe(response)
 }
 
-const server = createServer((request, response) => {
-  const requestPath = (request.url ?? '/').split('?')[0]
-  if (requestPath === '/api' || requestPath.startsWith('/api/')) {
-    proxy(request, response)
-    return
-  }
-  serveStatic(request, response).catch(() => {
-    if (!response.headersSent) {
-      response.writeHead(500, securityHeaders)
-      response.end()
+export function createGradeXServer() {
+  return createServer((request, response) => {
+    const requestPath = (request.url ?? '/').split('?')[0]
+    if (requestPath === '/api' || requestPath.startsWith('/api/')) {
+      proxy(request, response)
+      return
     }
+    serveStatic(request, response).catch(() => {
+      if (!response.headersSent) {
+        response.writeHead(500, securityHeaders)
+        response.end()
+      }
+    })
   })
-})
+}
 
-server.listen(port, '0.0.0.0', () => {
-  console.log(`GradeX frontend escuchando en ${port}`)
-})
+const entryPoint = process.argv[1]
+  ? pathToFileURL(process.argv[1]).href
+  : ''
+if (entryPoint === import.meta.url) {
+  const server = createGradeXServer()
+  server.listen(port, '0.0.0.0', () => {
+    console.log(`GradeX frontend escuchando en ${port}`)
+  })
+}
