@@ -4,7 +4,7 @@ Aplicación React 19 + Vite 8 + PWA para el acceso y los espacios de trabajo de 
 
 ## Requisitos
 
-- Node.js 20 o superior.
+- Node.js 24.x (compatible con Vite 8, Vitest 5 y jsdom 31).
 - Backend GradeX disponible en `http://localhost:5048` para desarrollo.
 
 ## Instalación
@@ -40,9 +40,9 @@ npm run test:coverage
 npm run test:e2e
 ```
 
-`npm run test:coverage` ejecuta las pruebas con `c8` y genera `coverage/lcov.info` y el resumen en texto. El umbral no está fijado: el porcentaje real se consulta en el artefacto, no se declara manualmente. El CI publica `coverage/` como artefacto.
+`npm test` ejecuta con Vitest las pruebas deterministas de validación, formato, errores HTTP, componentes React y rutas protegidas, en jsdom con React Testing Library. `npm run test:components` filtra las pruebas de componentes. `npm run test:coverage` instrumenta todo el frontend con V8 y genera `coverage/lcov.info`, `coverage/coverage-summary.json` y el resumen en texto. El umbral no está fijado: el porcentaje real se consulta en el artefacto, no se declara manualmente. El CI publica `coverage/` como artefacto.
 
-`npm test` ejecuta las pruebas deterministas de validación, formato, dictamen de certificado y mensajes de error con el runner de Node. `npm run test:e2e` construye la PWA, levanta el backend de integración y Chromium real, y recorre registro, login, nueva evaluación, bloqueo de categoría de un borrador, reemplazo de evidencia, asignación administrativa, evaluación, evidencia adicional, dictamen, certificado con QR, verificación pública, Mis certificados, perfil y cambio de contraseña. Las capturas quedan en `test-results/`, excluido de Git. El backend se busca en `../GradeX-back` o en la ruta indicada por `GRADEX_BACK_DIR`. El E2E local desactiva Pwned Passwords y eleva los límites de rate limiting solo en el proceso de prueba para que el recorrido sea determinista.
+`npm run test:e2e` conserva Playwright y construye la PWA, levanta el backend de integración y Chromium real, y recorre registro, login, nueva evaluación, bloqueo de categoría de un borrador, reemplazo de evidencia, asignación administrativa, evaluación, evidencia adicional, dictamen, certificado con QR, verificación pública, Mis certificados, perfil y cambio de contraseña. Las capturas quedan en `test-results/`, excluido de Git. El backend se busca en `../GradeX-back` o en la ruta indicada por `GRADEX_BACK_DIR`. El E2E local desactiva Pwned Passwords y eleva los límites de rate limiting solo en el proceso de prueba para que el recorrido sea determinista.
 
 ## Rutas de la aplicación
 
@@ -106,7 +106,12 @@ Las solicitudes usan `credentials: 'include'`. La contraseña nunca se guarda en
 
 El repositorio ya está vinculado a SonarQube Cloud (SonarCloud) mediante la integración de GitHub. El análisis automático publica el check `SonarCloud Code Analysis` y el Quality Gate del PR; no se crea una instancia SonarQube Server ni se añaden servicios de pago.
 
-El análisis automático **no importa cobertura**. `npm run test:coverage` genera un LCOV real en `coverage/lcov.info` y el CI lo publica como artefacto. Para importarlo a SonarCloud hace falta configurar el secreto `SONAR_TOKEN` y ejecutar un scanner con `sonar.javascript.lcov.reportPaths=coverage/lcov.info`. Si se habilita el scanner, debe sustituir al análisis automático, no ejecutarse en paralelo, para no duplicar análisis. Sin ese token no se declara cobertura importada.
+El análisis automático **no importa cobertura**. `npm run test:coverage` genera un LCOV real en `coverage/lcov.info` y el CI lo publica como artefacto. La importación por CI está preparada pero **no activada**:
+
+- `sonar-project.properties` define proyecto, organización, fuentes, pruebas y `sonar.javascript.lcov.reportPaths=coverage/lcov.info`.
+- `.github/workflows/sonar.yml` es manual (`workflow_dispatch`) y exige confirmar que Automatic Analysis está desactivado.
+
+Para activarla, un administrador del proyecto debe crear el secreto `SONAR_TOKEN`, desactivar Automatic Analysis en SonarCloud (Administration → Analysis Method), ejecutar el workflow manual con la confirmación marcada y verificar que el Quality Gate y las medidas de cobertura aparecen. El scanner debe sustituir al análisis automático, no ejecutarse en paralelo. Mientras no exista el token, no se declara cobertura importada.
 
 Los E2E usan `sqlcmd` contra `GradeX_IntegrationTests` para preparar roles, especialistas, criterios y un certificado no auténtico, y limpian solicitudes previas antes de ejecutarse. `sprint1-solicitante.spec.js` cubre el flujo base; `sprint2-sprint3.spec.js` cubre asignación, evaluación, evidencia adicional, certificado con QR, Mis certificados y perfil; `certificate-results.spec.js` verifica que un certificado con dictamen `NO_AUTENTICO` no se presente como auténtico. No se ejecutan en el CI hospedado porque requieren SQL Server LocalDB; se ejecutan localmente con `npm run test:e2e`.
 

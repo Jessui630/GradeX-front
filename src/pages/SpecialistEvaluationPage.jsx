@@ -74,6 +74,7 @@ export function SpecialistEvaluationPage() {
   const [detalle, setDetalle] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
+  const [errorCarga, setErrorCarga] = useState('')
   const [mensaje, setMensaje] = useState('')
   const [errores, setErrores] = useState({})
   const [guardando, setGuardando] = useState(false)
@@ -117,7 +118,7 @@ export function SpecialistEvaluationPage() {
         setResultados(iniciales)
       })
       .catch((fallo) => {
-        if (activo) setError(mensajeDeError(fallo))
+        if (activo) setErrorCarga(mensajeDeError(fallo))
       })
       .finally(() => {
         if (activo) setCargando(false)
@@ -151,12 +152,16 @@ export function SpecialistEvaluationPage() {
   }
 
   if (cargando) return <PageLoader label="Cargando la asignación…" />
-  if (error) {
+  if (errorCarga) {
     return (
       <div className="workspace-page">
         <ErrorState
-          description={error}
-          onAction={() => setIntento((actual) => actual + 1)}
+          description={errorCarga}
+          onAction={() => {
+            setErrorCarga('')
+            setCargando(true)
+            setIntento((actual) => actual + 1)
+          }}
           title="No pudimos cargar la asignación"
         />
         <Link className="button button-secondary" to="/app/especialista">

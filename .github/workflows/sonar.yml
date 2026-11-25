@@ -1,0 +1,64 @@
+name: SonarCloud analysis (manual activation)
+
+# Flujo manual y desactivado por defecto. No se ejecuta en push ni en pull_request
+# para conservar el análisis automático y el Quality Gate actuales hasta que un
+# administrador de SonarCloud configure SONAR_TOKEN y desactive Automatic Analysis.
+on:
+  workflow_dispatch:
+    inputs:
+      automatic_analysis_disabled:
+        description: 'Confirmo que Automatic Analysis está desactivado en SonarCloud'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  sonar:
+    if: ${{ inputs.automatic_analysis_disabled }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Unit and component tests with coverage
+        run: npm run test:coverage
+
+      - name: Require SONAR_TOKEN
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          if [ -z "$SONAR_TOKEN" ]; then
+            echo "::error::Falta el secreto SONAR_TOKEN. La importación de cobertura no se activa sin token."
+            exit 1
+          fi
+
+      - name: SonarCloud scan
+        uses: SonarSource/sonarqube-scan-action@70bad232163b09d998ea0707ee80c0ec80798c16 # v8.5.1
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradex-sonar-${{ github.run_id }}-${{ github.run_attempt }}
+          path: coverage/
+          if-no-files-found: warn
+          retention-days: 14

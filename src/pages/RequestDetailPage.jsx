@@ -113,6 +113,7 @@ export function RequestDetailPage({ id }) {
 
   async function enviarEvidenciaAdicional(evento) {
     evento.preventDefault()
+    const formulario = evento.currentTarget
     if (!idTipoEvidencia ||
       !tiposEvidenciaDisponibles.some(
         (tipo) => String(tipo.idTipoEvidencia) === String(idTipoEvidencia),
@@ -120,7 +121,7 @@ export function RequestDetailPage({ id }) {
       setErrorEvidencia('Selecciona un tipo de evidencia con capacidad disponible.')
       return
     }
-    const archivo = evento.target.archivo.files?.[0]
+    const archivo = formulario.elements.namedItem('archivo')?.files?.[0]
     if (!archivo) {
       setErrorEvidencia('Selecciona una imagen.')
       return
@@ -137,7 +138,7 @@ export function RequestDetailPage({ id }) {
       )
       setMensajeEvidencia('Evidencia adicional enviada. La evaluación continuará.')
       setDescripcionEvidencia('')
-      evento.target.reset()
+      formulario.reset()
       setIntento((actual) => actual + 1)
     } catch (fallo) {
       setErrorEvidencia(mensajeDeError(fallo))
