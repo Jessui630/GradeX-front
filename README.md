@@ -119,10 +119,12 @@ El repositorio ya está vinculado a SonarQube Cloud (SonarCloud) mediante la int
 
 El análisis automático **no importa cobertura**. `npm run test:coverage` genera un LCOV real en `coverage/lcov.info` y el CI lo publica como artefacto. La importación por CI está preparada pero **no activada**:
 
+- Proyecto SonarCloud `Jessui630_GradeX-front`, organización `jessui630`, rama principal `develop`.
 - `sonar-project.properties` define proyecto, organización, fuentes, pruebas y `sonar.javascript.lcov.reportPaths=coverage/lcov.info`.
-- `.github/workflows/sonar.yml` es manual (`workflow_dispatch`) y exige confirmar que Automatic Analysis está desactivado.
+- `.github/workflows/sonar.yml` es manual (`workflow_dispatch`), solo se ejecuta desde `develop` y exige confirmar que Automatic Analysis está desactivado.
+- La autenticación usa `SonarSource/sonarqube-auth-action@v1`: intercambia el token OIDC de GitHub por una credencial temporal. **No se crea ni se almacena un secreto `SONAR_TOKEN`**; la acción entrega la credencial al paso del scanner.
 
-Para activarla, un administrador del proyecto debe crear el secreto `SONAR_TOKEN`, desactivar Automatic Analysis en SonarCloud (Administration → Analysis Method), ejecutar el workflow manual con la confirmación marcada y verificar que el Quality Gate y las medidas de cobertura aparecen. El scanner debe sustituir al análisis automático, no ejecutarse en paralelo. Mientras no exista el token, no se declara cobertura importada.
+Para activarla, un administrador del proyecto debe confirmar que Secretless Analysis está habilitado y el proyecto vinculado, desactivar Automatic Analysis en SonarCloud (Administration → Analysis Method), ejecutar el workflow manual desde `develop` con la confirmación marcada y verificar que el Quality Gate y las medidas de cobertura aparecen. El scanner debe sustituir al análisis automático, no ejecutarse en paralelo. Mientras Automatic Analysis siga activo, no se declara cobertura importada.
 
 Los E2E usan `sqlcmd` contra `GradeX_IntegrationTests` para preparar roles, especialistas, criterios y un certificado no auténtico, y limpian solicitudes previas antes de ejecutarse. `sprint1-solicitante.spec.js` cubre el flujo base; `sprint2-sprint3.spec.js` cubre asignación, evaluación, evidencia adicional, certificado con QR, Mis certificados y perfil; `certificate-results.spec.js` verifica que un certificado con dictamen `NO_AUTENTICO` no se presente como auténtico. No se ejecutan en el CI hospedado porque requieren SQL Server LocalDB; se ejecutan localmente con `npm run test:e2e`.
 
