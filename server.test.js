@@ -1,8 +1,9 @@
+// @vitest-environment node
 import assert from 'node:assert/strict'
-import test from 'node:test'
+import { it } from 'vitest'
 import { securityHeaders } from './server.mjs'
 
-test('el servidor de producción publica cabeceras de seguridad y HSTS', () => {
+it('el servidor de producción publica cabeceras de seguridad y HSTS', () => {
   assert.equal(securityHeaders['X-Content-Type-Options'], 'nosniff')
   assert.equal(securityHeaders['X-Frame-Options'], 'DENY')
   assert.equal(securityHeaders['Referrer-Policy'], 'no-referrer')

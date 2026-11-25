@@ -1,4 +1,4 @@
-import test from 'node:test'
+import { it } from 'vitest'
 import assert from 'node:assert/strict'
 import {
   normalizarNfc,
@@ -9,33 +9,33 @@ import {
   validarRegistro,
 } from './validation.js'
 
-test('acepta un nombre con contenido', () => {
+it('acepta un nombre con contenido', () => {
   assert.equal(validarNombre('  Nombre de prueba  '), null)
   assert.match(validarNombre('   '), /nombre/i)
 })
 
-test('rechaza correos inválidos y acepta uno ASCII', () => {
+it('rechaza correos inválidos y acepta uno ASCII', () => {
   assert.equal(validarCorreo('usuario@example.com'), null)
   assert.match(validarCorreo('usuario'), /válido/i)
   assert.match(validarCorreo('usuario@example'), /válido/i)
 })
 
-test('exige contraseña de al menos 15 puntos Unicode', () => {
+it('exige contraseña de al menos 15 puntos Unicode', () => {
   assert.match(validarContrasena('corta'), /15/)
   assert.equal(validarContrasena('Una frase de prueba larga'), null)
 })
 
-test('conserva espacios y normaliza NFC para contar', () => {
+it('conserva espacios y normaliza NFC para contar', () => {
   const descompuesta = '  frase larga e\u0301 de prueba  '
   assert.equal(validarContrasena(descompuesta), null)
   assert.equal(normalizarNfc(descompuesta), '  frase larga é de prueba  ')
 })
 
-test('rechaza caracteres de control', () => {
+it('rechaza caracteres de control', () => {
   assert.match(validarContrasena('frase con control\u0007 larga'), /no permitidos/)
 })
 
-test('valida confirmación de contraseña', () => {
+it('valida confirmación de contraseña', () => {
   const errores = validarRegistro({
     nombreCompleto: 'Nombre',
     correo: 'usuario@example.com',
@@ -45,7 +45,7 @@ test('valida confirmación de contraseña', () => {
   assert.match(errores.confirmacion, /no coinciden/)
 })
 
-test('login exige correo y contraseña', () => {
+it('login exige correo y contraseña', () => {
   const errores = validarInicioSesion({ correo: '', contrasena: '' })
   assert.ok(errores.correo)
   assert.ok(errores.contrasena)
